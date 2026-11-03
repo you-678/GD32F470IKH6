@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\Firmware\GD32F4xx_standard_peripheral\Include;..\Firmware\CMSIS;..\Firmware\CMSIS\GD\GD32F4xx\Include;..\User;..\Hardware\led;..\Hardware\uart;..\Hardware</IncludePath>
+              <IncludePath>..\Firmware\GD32F4xx_standard_peripheral\Include;..\Firmware\CMSIS;..\Firmware\CMSIS\GD\GD32F4xx\Include;..\User;..\Hardware;..\BSP;..\Middlewares;..\App</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -413,19 +413,6 @@
               <FileName>startup_gd32f450_470.s</FileName>
               <FileType>2</FileType>
               <FilePath>..\Firmware\CMSIS\GD\GD32F4xx\Source\ARM\startup_gd32f450_470.s</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>App</GroupName>
-        </Group>
-        <Group>
-          <GroupName>Hardware</GroupName>
-          <Files>
-            <File>
-              <FileName>gd32f470i_eval.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Hardware\gd32f470i_eval.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -576,6 +563,39 @@
               <FileName>gd32f4xx_wwdgt.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Firmware\GD32F4xx_standard_peripheral\Source\gd32f4xx_wwdgt.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Hardware</GroupName>
+          <Files>
+            <File>
+              <FileName>gd32f470i_eval.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Hardware\gd32f470i_eval.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>BSP</GroupName>
+          <Files>
+            <File>
+              <FileName>bsp_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_led.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Middlewares</GroupName>
+        </Group>
+        <Group>
+          <GroupName>App</GroupName>
+          <Files>
+            <File>
+              <FileName>app_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_led.c</FilePath>
             </File>
           </Files>
         </Group>
