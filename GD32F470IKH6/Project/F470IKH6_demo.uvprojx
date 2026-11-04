@@ -584,10 +584,32 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_led.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_key_exti.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_key_exti.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_usart.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
           <GroupName>Middlewares</GroupName>
+          <Files>
+            <File>
+              <FileName>middleware_usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\middleware_usart.c</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>App</GroupName>
@@ -596,6 +618,16 @@
               <FileName>app_led.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\App\app_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_key.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_usart.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_usart.c</FilePath>
             </File>
           </Files>
         </Group>

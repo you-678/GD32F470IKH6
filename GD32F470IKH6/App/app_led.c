@@ -19,3 +19,22 @@ void led_flow_task(void)
     bsp_led2_off();
     delay_1ms(1000);
 }
+
+/* 上电自检闪烁函数，对应原版led_flash */
+void app_led_flash(uint8_t times)
+{
+    uint8_t i;
+    for(i = 0; i < times; i++)
+    {
+        delay_1ms(500);
+        bsp_led2_on();
+        delay_1ms(500);
+        bsp_led2_off();
+    }
+}
+
+/* 中断触发调用：翻转LED */
+void app_led_toggle(void)
+{
+    bsp_led2_toggle();
+}

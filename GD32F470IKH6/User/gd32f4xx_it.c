@@ -36,6 +36,8 @@ OF SUCH DAMAGE.
 #include "systick.h"
 #include "gd32f470i_eval.h"
 
+#include "app_led.h"
+
 extern uint8_t   tx_buffer[];
 extern uint8_t   rx_buffer[] ;
 extern uint32_t  nbr_data_to_read, nbr_data_to_send;
@@ -156,47 +158,12 @@ void SysTick_Handler(void)
 {
     delay_decrement();
 }
-/*!
-    \brief      this function handles external lines 10 to 15 interrupt request
-    \param[in]  none
-    \param[out] none
-    \retval     none
-*/
+
 void EXTI10_15_IRQHandler(void)
 {
-    if(RESET != exti_interrupt_flag_get(TAMPER_KEY_EXTI_LINE)) {
-        gd_eval_led_toggle(LED2);
-        exti_interrupt_flag_clear(TAMPER_KEY_EXTI_LINE);
+    if(RESET != exti_interrupt_flag_get(EXTI_13))
+    {
+        app_led_toggle();   // 调用APP层接口！不直接gpio操作
+        exti_interrupt_flag_clear(EXTI_13);
     }
 }
-
-///*!
-//    \brief      this function handles USART0 exception
-//    \param[in]  none
-//    \param[out] none
-//    \retval     none
-//*/
-//void USART0_IRQHandler(void)
-//{
-//    if(RESET != usart_interrupt_flag_get(USART0, USART_INT_FLAG_RBNE)){
-//        /* read one byte from the receive data register */
-//        rx_buffer[rx_counter++] = (uint8_t)usart_data_receive(USART0);
-
-//        if(rx_counter >= nbr_data_to_read)
-//        {
-//            /* disable the USART0 receive interrupt */
-//            usart_interrupt_disable(USART0, USART_INT_RBNE);
-//        }
-//    }
-//       
-//    if(RESET != usart_interrupt_flag_get(USART0, USART_INT_FLAG_TBE)){
-//        /* write one byte to the transmit data register */
-//        usart_data_transmit(USART0, tx_buffer[tx_counter++]);
-
-//        if(tx_counter >= nbr_data_to_send)
-//        {
-//            /* disable the USART0 transmit interrupt */
-//            usart_interrupt_disable(USART0, USART_INT_TBE);
-//        }
-//    }
-//}
