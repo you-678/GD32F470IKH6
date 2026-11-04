@@ -34,7 +34,15 @@ void app_led_flash(uint8_t times)
 }
 
 /* 中断触发调用：翻转LED */
-void app_led_toggle(void)
+void app_led1_toggle(void)
+{
+    bsp_led1_toggle();
+}
+void app_led2_toggle(void)
 {
     bsp_led2_toggle();
+}
+void app_led3_toggle(void)
+{
+    bsp_led3_toggle();
 }

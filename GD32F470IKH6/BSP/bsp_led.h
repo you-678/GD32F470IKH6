@@ -19,6 +19,8 @@ void bsp_led2_off(void);
 void bsp_led3_on(void);
 void bsp_led3_off(void);
 
+void bsp_led1_toggle(void);
 void bsp_led2_toggle(void);
+void bsp_led3_toggle(void);
 
 #endif

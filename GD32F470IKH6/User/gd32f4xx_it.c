@@ -158,12 +158,29 @@ void SysTick_Handler(void)
 {
     delay_decrement();
 }
-
-void EXTI10_15_IRQHandler(void)
+/* EXTI0 单独中断：处理 WAKEUP(PA0/EXTI_0) */
+void EXTI0_IRQHandler(void)
 {
-    if(RESET != exti_interrupt_flag_get(EXTI_13))
+    if (RESET != exti_interrupt_flag_get(EXTI_0))
     {
-        app_led_toggle();   // 调用APP层接口！不直接gpio操作
-        exti_interrupt_flag_clear(EXTI_13);
+        exti_interrupt_flag_clear(EXTI_0);
+        app_led1_toggle();   /* WAKEUP_KEY 触发 LED3 */
     }
 }
+
+/* EXTI10~15 共用中断：处理 TAMPER(PC13/EXTI_13) 和 USER(PB14/EXTI_14) */
+void EXTI10_15_IRQHandler(void)
+{
+    if (RESET != exti_interrupt_flag_get(EXTI_13))
+    {
+        exti_interrupt_flag_clear(EXTI_13);
+        app_led2_toggle();   /* TAMPER_KEY 触发 LED1 */
+    }
+
+    if (RESET != exti_interrupt_flag_get(EXTI_14))
+    {
+        exti_interrupt_flag_clear(EXTI_14);
+        app_led3_toggle();   /* USER_KEY 触发 LED2 */
+    }
+}
+

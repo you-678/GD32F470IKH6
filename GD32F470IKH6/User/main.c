@@ -37,15 +37,15 @@ int main(void)
   bsp_led_init();
 	bsp_key_init();
 	bsp_key_exti_init();
-	app_usart_init();
+//	app_usart_init();
 
-	app_led_flash(2);  // 上电闪烁一次自检
+//	app_led_flash(2);  // 上电闪烁一次自检
 	
   while(1)
-	{
-//		led_flow_task();
-//		key_scan_task();
-		
-		app_usart_task();
+	{		
+		//led_flow_task();
+		//key_scan_task();
+//		
+//		app_usart_task();
 	}
 }
