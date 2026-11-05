@@ -37,6 +37,8 @@ OF SUCH DAMAGE.
 #include "gd32f470i_eval.h"
 
 #include "app_led.h"
+#include "middleware_usart.h"
+#include "bsp_usart.h"
 
 extern uint8_t   tx_buffer[];
 extern uint8_t   rx_buffer[] ;
@@ -184,3 +186,23 @@ void EXTI10_15_IRQHandler(void)
     }
 }
 
+//void USART0_IRQHandler(void)
+//{
+//    if(RESET != usart_interrupt_flag_get(BSP_USART_COM0, USART_INT_FLAG_RBNE))
+//    {
+//        rx_buffer[rx_counter++] = (uint8_t)usart_data_receive(BSP_USART_COM0);
+//        if(rx_counter >= nbr_data_to_read)
+//        {
+//            bsp_usart_irq_disable_rx();
+//        }
+//    }
+
+//    if(RESET != usart_interrupt_flag_get(BSP_USART_COM0, USART_INT_FLAG_TBE))
+//    {
+//        usart_data_transmit(BSP_USART_COM0, tx_buffer[tx_counter++]);
+//        if(tx_counter >= nbr_data_to_send)
+//        {
+//            bsp_usart_irq_disable_tx();
+//        }
+//    }
+//}

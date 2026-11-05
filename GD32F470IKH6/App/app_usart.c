@@ -1,13 +1,9 @@
 #include "app_usart.h"
+#include "app_led.h"
 
 void app_usart_init(void)
 {
-    /* 初始化串口中间件 115200 */
     middleware_usart_init(115200);
-    /* 按键、LED初始化 */
-//    bsp_key_tamper_init();
-//    bsp_led_init();
-    /* 上电提示打印 */
     printf("\r\n USART printf example: please press the Tamper key \r\n");
 }
 

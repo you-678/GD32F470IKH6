@@ -17,6 +17,7 @@ void bsp_usart_init(uint32_t baudrate)
     usart_enable(BSP_USART_COM0);
 }
 
+
 void bsp_usart_send_byte(uint8_t dat)
 {
     usart_data_transmit(BSP_USART_COM0, dat);
