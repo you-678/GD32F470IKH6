@@ -1,47 +1,13 @@
-#include "app_usart.h"
-#include "app_led.h"
+#include "app_usart_irq.h"
 
-void app_usart_init(void)
+void app_usart_irq_init(void)
 {
 	middleware_usart_reset();
-    /* 初始化串口中间件 115200 */
     middleware_usart_init(115200);
-    /* 按键、LED初始化 */
-//    bsp_key_tamper_init();
-//    bsp_led_init();
-    /* 上电提示打印 */
-    printf("\r\n USART printf example: please press the Tamper key \r\n");
+	bsp_usart_irq_enable();
 }
 
-//void app_usart_task(void)
-//{
-//    if(RESET == bsp_key_tamper_read())
-//    {
-//        delay_1ms(50);
-//        if(RESET == bsp_key_tamper_read())
-//        {
-//            delay_1ms(50);
-//            if(RESET == bsp_key_tamper_read())
-//            {
-//                bsp_led3_on();
-//                printf("\r\n USART printf example \r\n");
-//            }
-//            else
-//            {
-//                bsp_led3_off();
-//            }
-//        }
-//        else
-//        {
-//            bsp_led3_off();
-//        }
-//    }
-//    else
-//    {
-//        bsp_led3_off();
-//    }
-//}
-void app_usart_task(void)
+void app_usart_irq_task(void)
 {
     /* 等待发送全部完成 */
     while(tx_counter < nbr_data_to_send);

@@ -1,5 +1,6 @@
 #ifndef __BSP_USART_H
 #define __BSP_USART_H
+
 #include "gd32f4xx.h"
 
 #define BSP_USART_COM0        USART0

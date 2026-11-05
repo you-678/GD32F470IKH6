@@ -75,4 +75,25 @@ OF SUCH DAMAGE.
     #include "gd32f4xx_exmc.h"
 #endif
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
+
+#include "systick.h"
+
+#include "bsp_led.h"
+#include "bsp_key.h"
+#include "bsp_key_exti.h"
+#include "bsp_usart.h"
+#include "bsp_usart_irq.h"
+
+#include "middleware_usart.h"
+#include "middleware_usart_irq.h"
+
+#include "app_led.h"
+#include "app_key.h"
+#include "app_usart.h"
+#include "app_usart_irq.h"
+
 #endif /* GD32F4XX_LIBOPT_H */

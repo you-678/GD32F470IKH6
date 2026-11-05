@@ -1,7 +1,7 @@
 #ifndef __LED_APP_H
 #define __LED_APP_H
 
-#include "stdint.h"
+#include "gd32f4xx.h"
 
 void led_flow_task(void);
 

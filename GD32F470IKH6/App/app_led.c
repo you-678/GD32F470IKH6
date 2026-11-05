@@ -1,6 +1,4 @@
 #include "app_led.h"
-#include "bsp_led.h"
-#include "systick.h"
 
 void led_flow_task(void)
 {

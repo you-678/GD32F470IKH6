@@ -1,5 +1,4 @@
 #include "app_usart.h"
-#include "app_led.h"
 
 void app_usart_init(void)
 {

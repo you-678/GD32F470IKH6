@@ -1,4 +1,4 @@
-#include "middleware_usart.h"
+#include "middleware_usart_irq.h"
 
 uint8_t tx_buffer[BUFFER_SIZE] = {
 0x00,0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08,0x09,0x0A,0x0B,0x0C,0x0D,0x0E,0x0F,
@@ -25,28 +25,6 @@ volatile uint16_t rx_counter = 0U;
 uint32_t nbr_data_to_read = BUFFER_SIZE;
 uint32_t nbr_data_to_send = BUFFER_SIZE;
 volatile ErrStatus transfer_status = ERROR;
-
-// printf重定向
-int fputc(int ch, FILE *f)
-{
-    bsp_usart_send_byte((uint8_t)ch);
-    return ch;
-}
-
-void middleware_usart_init(uint32_t baudrate)
-{
-    bsp_usart_init(baudrate);
-}
-
-void middleware_usart_send_string(char *str)
-{
-    while(*str != '\0')
-    {
-        bsp_usart_send_byte((uint8_t)*str++);
-    }
-    //等待发送完成 TC
-    while(RESET == usart_flag_get(BSP_USART_COM0, USART_FLAG_TC));
-}
 
 // 收发计数、缓存复位
 void middleware_usart_reset(void)

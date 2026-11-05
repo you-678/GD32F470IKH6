@@ -1,5 +1,4 @@
 #include "bsp_key_exti.h"
-#include "bsp_key.h"
 
 void bsp_key_exti_init(void)
 {

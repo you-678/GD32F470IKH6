@@ -599,6 +599,11 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_usart.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_usart_irq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_usart_irq.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -608,6 +613,11 @@
               <FileName>middleware_usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middlewares\middleware_usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>middleware_usart_irq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\middleware_usart_irq.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -628,6 +638,11 @@
               <FileName>app_usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\App\app_usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_usart_irq.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_usart_irq.c</FilePath>
             </File>
           </Files>
         </Group>

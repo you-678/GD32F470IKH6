@@ -1,7 +1,4 @@
 #include "bsp_key.h"
-#include "systick.h"
-
-#include "bsp_led.h"
 
 void key_scan_task(void)
 {
