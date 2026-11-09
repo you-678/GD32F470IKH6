@@ -23,4 +23,5 @@ void bsp_led1_toggle(void);
 void bsp_led2_toggle(void);
 void bsp_led3_toggle(void);
 
+void bsp_led_all_off(void);
 #endif

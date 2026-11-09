@@ -44,3 +44,7 @@ void app_led3_toggle(void)
 {
     bsp_led3_toggle();
 }
+void app_led_all_off(void)
+{
+	bsp_led_all_off();
+}

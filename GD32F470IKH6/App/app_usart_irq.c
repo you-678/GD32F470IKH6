@@ -3,7 +3,7 @@
 void app_usart_irq_init(void)
 {
 	middleware_usart_reset();
-    middleware_usart_init(115200);
+	app_usart_init();
 	bsp_usart_irq_enable();
 }
 

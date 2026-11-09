@@ -399,6 +399,11 @@
               <FileType>1</FileType>
               <FilePath>..\User\systick.c</FilePath>
             </File>
+            <File>
+              <FileName>gd32f4xx_libopt.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\User\gd32f4xx_libopt.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -604,6 +609,11 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_usart_irq.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_usart_dma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_usart_dma.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -643,6 +653,11 @@
               <FileName>app_usart_irq.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\App\app_usart_irq.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_usart_dma.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_usart_dma.c</FilePath>
             </File>
           </Files>
         </Group>

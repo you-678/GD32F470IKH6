@@ -87,6 +87,7 @@ OF SUCH DAMAGE.
 #include "bsp_key_exti.h"
 #include "bsp_usart.h"
 #include "bsp_usart_irq.h"
+#include "bsp_usart_dma.h"
 
 #include "middleware_usart.h"
 #include "middleware_usart_irq.h"
@@ -95,5 +96,6 @@ OF SUCH DAMAGE.
 #include "app_key.h"
 #include "app_usart.h"
 #include "app_usart_irq.h"
+#include "app_usart_dma.h"
 
 #endif /* GD32F4XX_LIBOPT_H */

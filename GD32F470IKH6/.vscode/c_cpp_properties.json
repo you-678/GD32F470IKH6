@@ -17,9 +17,10 @@
                 "Firmware/CMSIS",
                 "Firmware/CMSIS/GD/GD32F4xx/Include",
                 "User",
-                "Hardware/led",
-                "Hardware/uart",
-                "Hardware"
+                "Hardware",
+                "BSP",
+                "Middlewares",
+                "App"
             ],
             "defines": [
                 "__alignof__(x)=",

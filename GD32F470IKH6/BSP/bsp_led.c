@@ -63,3 +63,9 @@ void bsp_led3_toggle(void)
 {
     gpio_bit_write(LED3_PORT, LED3_PIN, !gpio_input_bit_get(LED3_PORT, LED3_PIN));
 }
+void bsp_led_all_off(void)
+{
+    bsp_led1_off();
+    bsp_led2_off();
+    bsp_led3_off();
+}

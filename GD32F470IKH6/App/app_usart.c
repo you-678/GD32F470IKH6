@@ -3,7 +3,7 @@
 void app_usart_init(void)
 {
     middleware_usart_init(115200);
-    printf("\r\n USART printf example: please press the Tamper key \r\n");
+    //printf("\r\n USART ok \r\n");
 }
 
 void app_usart_task(void)
