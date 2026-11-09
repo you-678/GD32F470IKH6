@@ -36,8 +36,8 @@ int main(void)
 {
     systick_config();
 
-    bsp_led_init();
-    bsp_key_exti_init();
+    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
+    bsp_key_init(KEY_WAKEUP, KEY_MODE_EXTI);bsp_key_init(KEY_TAMPER, KEY_MODE_EXTI);bsp_key_init(KEY_USER, KEY_MODE_EXTI);
 
     app_led_flash(1);  // 上电闪烁一次自检
 

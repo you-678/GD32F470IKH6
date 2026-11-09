@@ -3,7 +3,7 @@
 
 #include "gd32f4xx.h"
 
-void app_usart_irq_init(void);
-void app_usart_irq_task(void);
+//void app_usart_irq_init(void);
+//void app_usart_irq_task(void);
 
 #endif

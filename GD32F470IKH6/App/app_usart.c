@@ -1,11 +1,5 @@
 #include "app_usart.h"
 
-void app_usart_init(void)
-{
-    middleware_usart_init(115200);
-    //printf("\r\n USART ok \r\n");
-}
-
 void app_usart_task(void)
 {
     if(RESET == bsp_key_state_get(KEY_TAMPER))
