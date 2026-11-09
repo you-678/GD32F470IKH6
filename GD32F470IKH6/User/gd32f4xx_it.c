@@ -199,3 +199,42 @@ void USART0_IRQHandler(void)
     }
     /* 可以在此添加错误中断处理 (USART_INT_FLAG_ERR) */
 }
+
+
+///* USART0 IDLE 中断：一帧接收结束 */
+//void USART0_IRQHandler(void)
+//{
+//    if (RESET != usart_interrupt_flag_get(BSP_USART0_PERIPH, USART_INT_FLAG_IDLE))
+//    {
+//        /* 清 IDLE 必须：先读 STAT0，再读 DATA，顺序不能反 */
+//        volatile uint32_t tmp;
+//        tmp = USART_STAT0(BSP_USART0_PERIPH);
+//        tmp = USART_DATA(BSP_USART0_PERIPH);
+//        (void)tmp;
+
+//        uint16_t remain = (uint16_t)dma_transfer_number_get(BSP_USART0_DMA,
+//                                                            BSP_USART0_RX_DMA_CH);
+//        dma_rx_len = (uint16_t)(DMA_RX_BUF_SIZE - remain);
+
+//        if (dma_rx_len > 0)
+//        {
+//            dma_rx_complete = 1;
+//        }
+//    }
+//}
+
+///* USART0 TX 的 DMA 通道（DMA1_CH7）传输完成中断 */
+//void DMA1_Channel7_IRQHandler(void)
+//{
+//    if (SET == dma_interrupt_flag_get(BSP_USART0_DMA,
+//                                      BSP_USART0_TX_DMA_CH,
+//                                      DMA_INT_FLAG_FTF))
+//    {
+//        dma_interrupt_flag_clear(BSP_USART0_DMA,
+//                                 BSP_USART0_TX_DMA_CH,
+//                                 DMA_INT_FLAG_FTF);
+//        dma_channel_disable(BSP_USART0_DMA, BSP_USART0_TX_DMA_CH);
+//        usart_dma_transmit_config(BSP_USART0_PERIPH, USART_DENT_ENABLE);
+//        dma_tx_complete = 1;
+//    }
+//}

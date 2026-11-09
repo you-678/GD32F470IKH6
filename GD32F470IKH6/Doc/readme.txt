@@ -56,7 +56,7 @@ int main(void)
     systick_config();
     bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
     bsp_key_init(KEY_WAKEUP, KEY_MODE_GPIO);bsp_key_init(KEY_TAMPER, KEY_MODE_GPIO);bsp_key_init(KEY_USER, KEY_MODE_GPIO);
-    bsp_usart_init(EVAL_COM0, 115200U);
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
 	
 	app_led_flash(2);   //上电LED闪烁两次，和原demo保持一致
 	
@@ -71,22 +71,60 @@ int main(void)
 
 05_USART_Echo_Interrupt_mode
 
+/* 全局接收缓冲区和标志位 */
+uint8_t  rx_buffer[RX_BUFFER_SIZE];
+volatile uint16_t rx_index = 0;
+volatile uint8_t  rx_complete_flag = 0;
+
+/* USART0 中断服务函数 */
+void USART0_IRQHandler(void)
+{
+    /* 接收中断 */
+    if (usart_interrupt_flag_get(BSP_USART0_PERIPH, USART_INT_FLAG_RBNE) != RESET)
+    {
+        uint8_t data = (uint8_t)usart_data_receive(BSP_USART0_PERIPH);
+        
+        if (rx_index < RX_BUFFER_SIZE - 1) {
+            rx_buffer[rx_index++] = data;
+        }
+        
+        /* 简单约定：收到 '\n' 认为一帧结束 */
+        if (data == '\n') {
+            rx_buffer[rx_index] = '\0';   // 字符串结束符
+            rx_complete_flag = 1;
+        }
+    }
+    /* 可以在此添加错误中断处理 (USART_INT_FLAG_ERR) */
+}
+/* 全局接收缓冲区和标志位 */
+extern uint8_t  rx_buffer[RX_BUFFER_SIZE];
+extern volatile uint16_t rx_index;
+extern volatile uint8_t  rx_complete_flag;
+
 int main(void)
 {
     systick_config();
-    bsp_led_init();
-    app_led_flash(1);
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_IRQ, 115200U);  // 中断模式
 
-    app_usart_irq_init();
-    app_usart_irq_task();
-
-    while(1)
+    while (1)
     {
-		
+        if (rx_complete_flag)
+        {
+            /* 处理收到的完整一帧数据 */
+            // 例如：回显收到的字符串
+            printf("IRQ Recv: %s", rx_buffer);
+            
+            /* 清空状态，准备接收下一帧 */
+            memset(rx_buffer, 0, sizeof(rx_buffer));
+            rx_index = 0;
+            rx_complete_flag = 0;
+        }
+        
+        /* 可以在这里执行其他非阻塞任务 */
     }
 }
-现象：上电闪一次灯 → 初始化串口中断 → 死等"TX 发完"再死等"RX 收完"（任意一方不齐就永久卡死）→ 比对通过进入三灯 200ms 节拍无限流水、失败则无限闪灯；
-app_usart_irq_task() 自带 while(1) 永不返回，main 里的主循环形同虚设。
+现象：中断模式按字节接收，串口助手发一行（必须以 \n 结尾）才触发一帧——主循环检测到标志后用 printf("IRQ Recv: ...") 回显整行，随后清空缓冲区等下一行；
+不发换行就永远不回显，printf 回显期间若再来数据可能被覆盖丢失。
 
 06_USART_DMA
 
