@@ -35,12 +35,6 @@ OF SUCH DAMAGE.
 #include "gd32f4xx_it.h"
 #include "gd32f4xx.h"
 
-extern uint8_t   tx_buffer[];
-extern uint8_t   rx_buffer[] ;
-extern uint32_t  nbr_data_to_read, nbr_data_to_send;
-extern volatile uint16_t  tx_counter, rx_counter;
-
-
 /*!
     \brief      this function handles NMI exception
     \param[in]  none
@@ -180,24 +174,28 @@ void EXTI10_15_IRQHandler(void)
         bsp_led_toggle(LED3);   /* USER_KEY 触发 LED3 */
     }
 }
+/* 全局接收缓冲区和标志位 */
+uint8_t  rx_buffer[RX_BUFFER_SIZE];
+volatile uint16_t rx_index = 0;
+volatile uint8_t  rx_complete_flag = 0;
 
+/* USART0 中断服务函数 */
 void USART0_IRQHandler(void)
 {
-    if(RESET != usart_interrupt_flag_get(BSP_USART_COM0, USART_INT_FLAG_RBNE))
+    /* 接收中断 */
+    if (usart_interrupt_flag_get(BSP_USART0_PERIPH, USART_INT_FLAG_RBNE) != RESET)
     {
-        rx_buffer[rx_counter++] = (uint8_t)usart_data_receive(BSP_USART_COM0);
-        if(rx_counter >= nbr_data_to_read)
-        {
-            bsp_usart_irq_disable_rx();
+        uint8_t data = (uint8_t)usart_data_receive(BSP_USART0_PERIPH);
+        
+        if (rx_index < RX_BUFFER_SIZE - 1) {
+            rx_buffer[rx_index++] = data;
+        }
+        
+        /* 简单约定：收到 '\n' 认为一帧结束 */
+        if (data == '\n') {
+            rx_buffer[rx_index] = '\0';   // 字符串结束符
+            rx_complete_flag = 1;
         }
     }
-
-    if(RESET != usart_interrupt_flag_get(BSP_USART_COM0, USART_INT_FLAG_TBE))
-    {
-        usart_data_transmit(BSP_USART_COM0, tx_buffer[tx_counter++]);
-        if(tx_counter >= nbr_data_to_send)
-        {
-            bsp_usart_irq_disable_tx();
-        }
-    }
+    /* 可以在此添加错误中断处理 (USART_INT_FLAG_ERR) */
 }

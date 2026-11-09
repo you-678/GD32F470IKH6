@@ -37,6 +37,8 @@ OF SUCH DAMAGE.
 
 #include "gd32f4xx.h"
 
+#define RX_BUFFER_SIZE  128
+
 /* function declarations */
 /* this function handles NMI exception */
 void NMI_Handler(void);
@@ -57,6 +59,9 @@ void PendSV_Handler(void);
 /* this function handles SysTick exception */
 void SysTick_Handler(void);
 
+void EXTI0_IRQHandler(void);
 void EXTI10_15_IRQHandler(void);
+
+void USART0_IRQHandler(void);
 
 #endif /* GD32F4XX_IT_H */

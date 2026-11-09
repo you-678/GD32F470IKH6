@@ -1,18 +1,33 @@
 #include "gd32f4xx.h"
+#include "gd32f4xx_it.h"
 #include "main.h"
 //#include "gd32f470i_eval.h"
+
+/* 全局接收缓冲区和标志位 */
+extern uint8_t  rx_buffer[RX_BUFFER_SIZE];
+extern volatile uint16_t rx_index;
+extern volatile uint8_t  rx_complete_flag;
 
 int main(void)
 {
     systick_config();
-    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
-    bsp_key_init(KEY_WAKEUP, KEY_MODE_GPIO);bsp_key_init(KEY_TAMPER, KEY_MODE_GPIO);bsp_key_init(KEY_USER, KEY_MODE_GPIO);
-    bsp_usart_init(EVAL_COM0, 115200U);
-	
-	app_led_flash(2);   //上电LED闪烁两次，和原demo保持一致
-    while(1)
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_IRQ, 115200U);  // 中断模式
+
+    while (1)
     {
-        app_usart_task();
+        if (rx_complete_flag)
+        {
+            /* 处理收到的完整一帧数据 */
+            // 例如：回显收到的字符串
+            printf("IRQ Recv: %s", rx_buffer);
+            
+            /* 清空状态，准备接收下一帧 */
+            memset(rx_buffer, 0, sizeof(rx_buffer));
+            rx_index = 0;
+            rx_complete_flag = 0;
+        }
+        
+        /* 可以在这里执行其他非阻塞任务 */
     }
 }
 
