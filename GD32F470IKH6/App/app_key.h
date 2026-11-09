@@ -3,6 +3,6 @@
 
 #include "gd32f4xx.h"
 
-void key_scan_task(void);
+void app_key_scan_task(void);
 
 #endif

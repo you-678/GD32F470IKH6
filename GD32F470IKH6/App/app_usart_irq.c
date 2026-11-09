@@ -21,15 +21,16 @@ void app_usart_irq_task(void)
     {
         if(SUCCESS == transfer_status)
         {
-            bsp_led1_on();
+            bsp_led_on(LED1);
             delay_1ms(200);
-            bsp_led2_on();
+            bsp_led_on(LED2);
             delay_1ms(200);
-            bsp_led3_on();
+            bsp_led_on(LED3);
             delay_1ms(200);
-            bsp_led1_off();
-            bsp_led2_off();
-            bsp_led3_off();
+            bsp_led_off(LED1);
+            bsp_led_off(LED2);
+            bsp_led_off(LED3);
+			
             delay_1ms(200);
         }
         else

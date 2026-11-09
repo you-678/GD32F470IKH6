@@ -55,13 +55,13 @@ void app_usart_dma_loop(void)
 {
     if(SUCCESS == transfer_status_dma)
     {
-        bsp_led1_on();
+        bsp_led_on(LED1);
         delay_1ms(200);
-        bsp_led2_on();
+        bsp_led_on(LED2);
         delay_1ms(200);
-        bsp_led3_on();
+        bsp_led_on(LED3);
         delay_1ms(200);
-        bsp_led_all_off();
+        app_led_all_off();
         delay_1ms(200);
     }
     else

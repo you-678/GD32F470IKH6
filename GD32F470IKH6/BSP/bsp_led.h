@@ -3,25 +3,31 @@
 
 #include "gd32f4xx.h"
 
-// 硬件定义，只在这里改引脚！
-#define LED1_PORT    GPIOE
-#define LED1_PIN     GPIO_PIN_2
-#define LED2_PORT    GPIOE
-#define LED2_PIN     GPIO_PIN_3
-#define LED3_PORT    GPIOF
-#define LED3_PIN     GPIO_PIN_10
+typedef enum 
+{
+    LED1 = 0,
+    LED2 = 1,
+    LED3 = 2
+} led_typedef_enum;
 
-void bsp_led_init(void);
-void bsp_led1_on(void);
-void bsp_led1_off(void);
-void bsp_led2_on(void);
-void bsp_led2_off(void);
-void bsp_led3_on(void);
-void bsp_led3_off(void);
+#define LEDn                             3U
 
-void bsp_led1_toggle(void);
-void bsp_led2_toggle(void);
-void bsp_led3_toggle(void);
+#define LED1_PIN                         GPIO_PIN_2
+#define LED1_GPIO_PORT                   GPIOE
+#define LED1_GPIO_CLK                    RCU_GPIOE
+  
+#define LED2_PIN                         GPIO_PIN_3
+#define LED2_GPIO_PORT                   GPIOE
+#define LED2_GPIO_CLK                    RCU_GPIOE
+  
+#define LED3_PIN                         GPIO_PIN_10
+#define LED3_GPIO_PORT                   GPIOF
+#define LED3_GPIO_CLK                    RCU_GPIOF
 
-void bsp_led_all_off(void);
+
+void bsp_led_init(led_typedef_enum lednum);
+void bsp_led_on(led_typedef_enum lednum);
+void bsp_led_off(led_typedef_enum lednum);
+void bsp_led_toggle(led_typedef_enum lednum);
+
 #endif

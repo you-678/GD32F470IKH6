@@ -84,7 +84,6 @@ OF SUCH DAMAGE.
 
 #include "bsp_led.h"
 #include "bsp_key.h"
-#include "bsp_key_exti.h"
 #include "bsp_usart.h"
 #include "bsp_usart_irq.h"
 #include "bsp_usart_dma.h"

@@ -17,7 +17,6 @@
                 "Firmware/CMSIS",
                 "Firmware/CMSIS/GD/GD32F4xx/Include",
                 "User",
-                "Hardware",
                 "BSP",
                 "Middlewares",
                 "App"

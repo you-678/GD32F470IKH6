@@ -372,38 +372,38 @@ typedef FlagStatus bit_status;
 
 /* function declarations */
 /* reset GPIO port */
-void gpio_deinit(uint32_t gpio_periph);
+void gpio_deinit(uint32_t gpio_periph);//用途：把整个 GPIO 端口复位到上电默认状态（模拟输入、无上下拉、输出寄存器清零）。
 /* set GPIO mode */
-void gpio_mode_set(uint32_t gpio_periph, uint32_t mode, uint32_t pull_up_down, uint32_t pin);
+void gpio_mode_set(uint32_t gpio_periph, uint32_t mode, uint32_t pull_up_down, uint32_t pin);//用途：设置引脚工作模式和上下拉。
 /* set GPIO output type and speed */
-void gpio_output_options_set(uint32_t gpio_periph, uint8_t otype, uint32_t speed, uint32_t pin);
+void gpio_output_options_set(uint32_t gpio_periph, uint8_t otype, uint32_t speed, uint32_t pin);//用途：在输出模式或复用模式下，设置输出类型（推挽/开漏）和翻转速度。
 
 /* set GPIO pin bit */
-void gpio_bit_set(uint32_t gpio_periph, uint32_t pin);
+void gpio_bit_set(uint32_t gpio_periph, uint32_t pin);//用途：把指定引脚置高（写 BOP 寄存器，原子操作）。
 /* reset GPIO pin bit */
-void gpio_bit_reset(uint32_t gpio_periph, uint32_t pin);
+void gpio_bit_reset(uint32_t gpio_periph, uint32_t pin);//用途：把指定引脚置低（写 BC 寄存器，原子操作）。LED 灭（共阴）/ 拉低复位信号等。
 /* write data to the specified GPIO pin */
-void gpio_bit_write(uint32_t gpio_periph, uint32_t pin, bit_status bit_value);
+void gpio_bit_write(uint32_t gpio_periph, uint32_t pin, bit_status bit_value);//用途：按状态变量写引脚，bit_value = SET/RESET（1/0）。内部根据值选择 set 还是 reset。
 /* write data to the specified GPIO port */
-void gpio_port_write(uint32_t gpio_periph, uint16_t data);
+void gpio_port_write(uint32_t gpio_periph, uint16_t data);//用途：一次性写整个端口 16 位输出寄存器（ODR）。
 
 /* get GPIO pin input status */
-FlagStatus gpio_input_bit_get(uint32_t gpio_periph, uint32_t pin);
+FlagStatus gpio_input_bit_get(uint32_t gpio_periph, uint32_t pin);//用途：读输入寄存器 IDR 的某一位，返回 SET(1) / RESET(0)。
 /* get GPIO port input status */
-uint16_t gpio_input_port_get(uint32_t gpio_periph);
+uint16_t gpio_input_port_get(uint32_t gpio_periph);//用途：一次读整个端口 16 位 IDR。
 /* get GPIO pin output status */
-FlagStatus gpio_output_bit_get(uint32_t gpio_periph, uint32_t pin);
+FlagStatus gpio_output_bit_get(uint32_t gpio_periph, uint32_t pin);//用途：读输出寄存器 ODR 的某一位（不是引脚实际电平，是"你上次写进去的值"）。
 /* get GPIO port output status */
-uint16_t gpio_output_port_get(uint32_t gpio_periph);
+uint16_t gpio_output_port_get(uint32_t gpio_periph);//用途：一次读整个端口 16 位 ODR。用于批量读回输出状态、或并口输出前做掩码修改。
 
 /* set GPIO alternate function */
-void gpio_af_set(uint32_t gpio_periph, uint32_t alt_func_num, uint32_t pin);
+void gpio_af_set(uint32_t gpio_periph, uint32_t alt_func_num, uint32_t pin);//用途：把引脚映射到某个复用功能编号（AF0~AF15）。
 /* lock GPIO pin bit */
-void gpio_pin_lock(uint32_t gpio_periph, uint32_t pin);
+void gpio_pin_lock(uint32_t gpio_periph, uint32_t pin);//用途：锁定引脚配置，直到下次复位前无法再修改该引脚的 mode/otype/speed/上下拉（写配置寄存器会被忽略）。
 
 /* toggle GPIO pin status */
-void gpio_bit_toggle(uint32_t gpio_periph, uint32_t pin);
+void gpio_bit_toggle(uint32_t gpio_periph, uint32_t pin);//用途：硬件翻转指定引脚电平（写 TG 寄存器，原子操作）。等价于你之前用的 GPIO_TG(port) = pin。
 /* toggle GPIO port status */
-void gpio_port_toggle(uint32_t gpio_periph);
+void gpio_port_toggle(uint32_t gpio_periph);//用途：翻转整个端口 16 位输出。
 
 #endif /* GD32F4XX_GPIO_H */

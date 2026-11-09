@@ -3,11 +3,11 @@
 
 #include "gd32f4xx.h"
 
-void led_flow_task(void);
+void app_led_all_on(void);
+void app_led_all_off(void);
+void app_led_all_toggle(void);
 
+void app_led_flow_task(void);
 void app_led_flash(uint8_t times);
-void app_led1_toggle(void);
-void app_led2_toggle(void);
-void app_led3_toggle(void);
 
 #endif

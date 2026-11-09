@@ -33,11 +33,7 @@ OF SUCH DAMAGE.
 */
 
 #include "gd32f4xx_it.h"
-#include "systick.h"
-#include "gd32f470i_eval.h"
-
-#include "app_led.h"
-#include "bsp_usart_irq.h"
+#include "gd32f4xx.h"
 
 extern uint8_t   tx_buffer[];
 extern uint8_t   rx_buffer[] ;
@@ -165,7 +161,7 @@ void EXTI0_IRQHandler(void)
     if (RESET != exti_interrupt_flag_get(EXTI_0))
     {
         exti_interrupt_flag_clear(EXTI_0);
-        app_led1_toggle();   /* WAKEUP_KEY 触发 LED3 */
+        bsp_led_toggle(LED1);   /* WAKEUP_KEY 触发 LED1 */
     }
 }
 
@@ -175,13 +171,13 @@ void EXTI10_15_IRQHandler(void)
     if (RESET != exti_interrupt_flag_get(EXTI_13))
     {
         exti_interrupt_flag_clear(EXTI_13);
-        app_led2_toggle();   /* TAMPER_KEY 触发 LED1 */
+        bsp_led_toggle(LED2);   /* TAMPER_KEY 触发 LED2 */
     }
 
     if (RESET != exti_interrupt_flag_get(EXTI_14))
     {
         exti_interrupt_flag_clear(EXTI_14);
-        app_led3_toggle();   /* USER_KEY 触发 LED2 */
+        bsp_led_toggle(LED3);   /* USER_KEY 触发 LED3 */
     }
 }
 

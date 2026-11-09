@@ -3,11 +3,11 @@
 int main(void)
 {
     systick_config();
-    bsp_led_init();
+    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
 
     while(1)
     {
-        led_flow_task();
+        app_led_flow_task();
     }
 }
 现象：三灯以 1 秒/颗的节奏做 LED1→LED2→LED3 循环流水，周期 3 秒；
@@ -19,12 +19,12 @@ int main(void)
 int main(void)
 {
     systick_config();
-    bsp_led_init();
-    bsp_key_init();
+    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
+    bsp_key_init(KEY_WAKEUP, KEY_MODE_GPIO);bsp_key_init(KEY_TAMPER, KEY_MODE_GPIO);bsp_key_init(KEY_USER, KEY_MODE_GPIO);
 
     while(1)
     {
-        key_scan_task();
+        app_key_scan_task();
     }
 }
 现象：三个按键（Wakeup/Tamper/User）按下后分别翻转 LED1/LED2/LED3，每个按键都带 100ms 消抖且用 `while` 死等松手；

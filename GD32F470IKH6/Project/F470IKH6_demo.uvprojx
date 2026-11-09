@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\Firmware\GD32F4xx_standard_peripheral\Include;..\Firmware\CMSIS;..\Firmware\CMSIS\GD\GD32F4xx\Include;..\User;..\Hardware;..\BSP;..\Middlewares;..\App</IncludePath>
+              <IncludePath>..\Firmware\GD32F4xx_standard_peripheral\Include;..\Firmware\CMSIS;..\Firmware\CMSIS\GD\GD32F4xx\Include;..\User;..\BSP;..\Middlewares;..\App</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -572,16 +572,6 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Hardware</GroupName>
-          <Files>
-            <File>
-              <FileName>gd32f470i_eval.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Hardware\gd32f470i_eval.c</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
           <GroupName>BSP</GroupName>
           <Files>
             <File>
@@ -593,11 +583,6 @@
               <FileName>bsp_key.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_key.c</FilePath>
-            </File>
-            <File>
-              <FileName>bsp_key_exti.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\BSP\bsp_key_exti.c</FilePath>
             </File>
             <File>
               <FileName>bsp_usart.c</FileName>
