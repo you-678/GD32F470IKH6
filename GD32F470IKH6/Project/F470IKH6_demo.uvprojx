@@ -589,6 +589,11 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_usart.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_adc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -611,6 +616,11 @@
               <FileName>app_usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\App\app_usart.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_adc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_adc.c</FilePath>
             </File>
           </Files>
         </Group>

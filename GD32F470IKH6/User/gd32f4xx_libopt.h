@@ -86,11 +86,12 @@ OF SUCH DAMAGE.
 #include "bsp_led.h"
 #include "bsp_key.h"
 #include "bsp_usart.h"
+#include "bsp_adc.h"
 
 
 #include "app_led.h"
 #include "app_key.h"
 #include "app_usart.h"
-
+#include "app_adc.h"
 
 #endif /* GD32F4XX_LIBOPT_H */

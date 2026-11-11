@@ -130,6 +130,23 @@ int main(void)
 
 07_ADC_Temperature_Vrefint
 
+int main(void)
+{
+    systick_config();
+    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
+    bsp_key_init(KEY_WAKEUP, KEY_MODE_GPIO);bsp_key_init(KEY_TAMPER, KEY_MODE_GPIO);bsp_key_init(KEY_USER, KEY_MODE_GPIO);
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+	bsp_adc_init();
+	
+	app_led_flash(2);   //上电LED闪烁两次，和原demo保持一致
+	
+	
+    while(1)
+    {
+        app_adc_task();
+    }
+}
+
 08_ADC0_ADC1_Follow_up_mode
 
 09_ADC0_ADC1_Routine_Parallel_mode
