@@ -134,101 +134,88 @@ int main(void) {
 
 04_USART_Printf
 
-int main(void)
-{
-    systick_config();
-    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
-    bsp_key_init(KEY_WAKEUP, KEY_MODE_GPIO);bsp_key_init(KEY_TAMPER, KEY_MODE_GPIO);bsp_key_init(KEY_USER, KEY_MODE_GPIO);
-    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-	
-	app_led_flash(2);   //上电LED闪烁两次，和原demo保持一致
-	
-    while(1)
-    {
-        app_usart_task();
-    }
-}
-现象：上电 LED 闪 2 次 → 串口初始化 → 主循环只轮询 TAMPER 键（PC13）：
-按住期间 LED3 常亮并不断 `printf("USART printf example")`（长按会疯狂刷屏），
-松开立即灭灯——"按住才亮、按住就一直打印，其余 LED 流水和 Wakeup/User 键完全没跑"。
 
 05_USART_Echo_Interrupt_mode
 
-/* 全局接收缓冲区和标志位 */
-uint8_t  rx_buffer[RX_BUFFER_SIZE];
-volatile uint16_t rx_index = 0;
-volatile uint8_t  rx_complete_flag = 0;
-
-/* USART0 中断服务函数 */
-void USART0_IRQHandler(void)
-{
-    /* 接收中断 */
-    if (usart_interrupt_flag_get(BSP_USART0_PERIPH, USART_INT_FLAG_RBNE) != RESET)
-    {
-        uint8_t data = (uint8_t)usart_data_receive(BSP_USART0_PERIPH);
-        
-        if (rx_index < RX_BUFFER_SIZE - 1) {
-            rx_buffer[rx_index++] = data;
-        }
-        
-        /* 简单约定：收到 '\n' 认为一帧结束 */
-        if (data == '\n') {
-            rx_buffer[rx_index] = '\0';   // 字符串结束符
-            rx_complete_flag = 1;
-        }
-    }
-    /* 可以在此添加错误中断处理 (USART_INT_FLAG_ERR) */
-}
-/* 全局接收缓冲区和标志位 */
-extern uint8_t  rx_buffer[RX_BUFFER_SIZE];
-extern volatile uint16_t rx_index;
-extern volatile uint8_t  rx_complete_flag;
-
-int main(void)
-{
-    systick_config();
-    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_IRQ, 115200U);  // 中断模式
-
-    while (1)
-    {
-        if (rx_complete_flag)
-        {
-            /* 处理收到的完整一帧数据 */
-            // 例如：回显收到的字符串
-            printf("IRQ Recv: %s", rx_buffer);
-            
-            /* 清空状态，准备接收下一帧 */
-            memset(rx_buffer, 0, sizeof(rx_buffer));
-            rx_index = 0;
-            rx_complete_flag = 0;
-        }
-        
-        /* 可以在这里执行其他非阻塞任务 */
-    }
-}
-现象：中断模式按字节接收，串口助手发一行（必须以 \n 结尾）才触发一帧——主循环检测到标志后用 printf("IRQ Recv: ...") 回显整行，随后清空缓冲区等下一行；
-不发换行就永远不回显，printf 回显期间若再来数据可能被覆盖丢失。
 
 06_USART_DMA
 
-07_ADC_Temperature_Vrefint
 
-int main(void)
-{
+/*!
+    \brief      系统主函数 - 串口终极测试 (先测 Printf，再测 IRQ，最后测 DMA)
+    \param[in]  无
+    \param[out] 无
+    \retval     无
+*/
+int main(void) {
+    uint8_t rx_buf[256];
+    uint16_t rx_len = 0;
+
+    /* 1. 基础环境初始化 */
     systick_config();
-    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
-    bsp_key_init(KEY_WAKEUP, KEY_MODE_GPIO);bsp_key_init(KEY_TAMPER, KEY_MODE_GPIO);bsp_key_init(KEY_USER, KEY_MODE_GPIO);
+    bsp_led_init(LED1);
+
+    /* =========================================================
+     * 阶段一：纯 Printf 测试 (持续 5 秒)
+     * ========================================================= */
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-	bsp_adc_init();
-	
-	app_led_flash(2);   //上电LED闪烁两次，和原demo保持一致
-	
-	
-    while(1)
-    {
-        app_adc_task();
+    
+    printf("\r\n========================================\r\n");
+    printf("STAGE 1: Printf Test Started (5 seconds)\r\n");
+    printf("You should see heartbeats below.\r\n");
+    printf("========================================\r\n");
+
+    /* 循环 50 次，每次 100ms，总计 5 秒 */
+    for (int i = 0; i < 50; i++) {
+        printf("[Printf] Heartbeat %d\r\n", i);
+        delay_1ms(100);
+    }
+
+    /* =========================================================
+     * 阶段二：中断接收 (IRQ) + 普通回显 (持续 10 秒)
+     * ========================================================= */
+    /* 重新初始化串口，开启中断接收 */
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_IRQ, 115200U);
+    
+    printf("\r\n========================================\r\n");
+    printf("STAGE 2: IRQ RX & Printf Echo (10 seconds)\r\n");
+    printf("Please send some data to test IRQ.\r\n");
+    printf("========================================\r\n");
+
+    /* 循环 1000 次，每次 10ms，总计 10 秒 */
+    for (int i = 0; i < 1000; i++) {
+        /* 查询是否收到数据 */
+        if (bsp_usart_get_rx_data(BSP_USART_COM0, rx_buf, &rx_len)) {
+            rx_buf[rx_len] = '\0'; /* 添加结束符 */
+            printf("[IRQ RX] Got: %s\r\n", rx_buf);
+            bsp_led_toggle(LED1);
+        }
+        delay_1ms(10);
+    }
+
+    /* =========================================================
+     * 阶段三：中断接收 (IRQ) + DMA 发送回显 (无限循环)
+     * ========================================================= */
+    printf("\r\n========================================\r\n");
+    printf("STAGE 3: IRQ RX & DMA Echo (Infinite loop)\r\n");
+    printf("Please send some data to test DMA echo.\r\n");
+    printf("========================================\r\n");
+
+    while(1) {
+        if (bsp_usart_get_rx_data(BSP_USART_COM0, rx_buf, &rx_len)) {
+            rx_buf[rx_len] = '\0';
+            printf("[IRQ RX] Got: %s\r\n", rx_buf);
+            
+            /* 调用底层 DMA 发送函数，把收到的数据发回去 */
+            bsp_usart_send_dma(BSP_USART_COM0, rx_buf, rx_len);
+            
+            bsp_led_toggle(LED1);
+        }
+        delay_1ms(10);
     }
 }
+
+07_ADC_Temperature_Vrefint
 
 08_ADC0_ADC1_Follow_up_mode
 

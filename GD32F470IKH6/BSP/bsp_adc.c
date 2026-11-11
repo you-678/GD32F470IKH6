@@ -52,16 +52,23 @@ static void adc_dual_dma_timer_config(void) {
 
 /*!
     \brief      配置双ADC同步模式及DMA搬运
-    \param[in]  无
+    \param[in]  mode: 工作模式(跟随或并行)
     \param[out] 无
     \retval     无
 */
-static void adc_dual_dma_config(void) {
+static void adc_dual_dma_config(bsp_adc_mode_enum mode) {
     rcu_periph_clock_enable(BSP_ADC_DUAL_GPIO_CLK);
     rcu_periph_clock_enable(RCU_DMA1);
     rcu_periph_clock_enable(RCU_ADC0);
     rcu_periph_clock_enable(RCU_ADC1);
-    adc_clock_config(ADC_ADCCK_PCLK2_DIV8);
+    
+    /* 根据官方Demo，并行模式ADC时钟为DIV4，跟随模式为DIV8 */
+    if (mode == BSP_ADC_MODE_DUAL_DMA_PARALLEL) {
+        adc_clock_config(ADC_ADCCK_PCLK2_DIV4);
+    } else {
+        adc_clock_config(ADC_ADCCK_PCLK2_DIV8);
+    }
+
     gpio_mode_set(BSP_ADC_DUAL_GPIO_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, BSP_ADC_CH13_PIN);
     gpio_mode_set(BSP_ADC_DUAL_GPIO_PORT, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, BSP_ADC_CH15_PIN);
     adc_dual_dma_timer_config();
@@ -81,7 +88,22 @@ static void adc_dual_dma_config(void) {
     dma_channel_subperipheral_select(DMA1, DMA_CH0, DMA_SUBPERI0);
     dma_channel_enable(DMA1, DMA_CH0);
 
-    adc_sync_mode_config(ADC_DAUL_REGULAL_FOLLOW_UP);
+       if (mode == BSP_ADC_MODE_DUAL_DMA_PARALLEL) {
+        /* 并行模式 */
+        adc_sync_mode_config(ADC_DAUL_REGULAL_PARALLEL);
+        adc_regular_channel_config(ADC0, 0, ADC_CHANNEL_13, ADC_SAMPLETIME_144);
+        adc_regular_channel_config(ADC0, 1, ADC_CHANNEL_15, ADC_SAMPLETIME_144);
+        adc_regular_channel_config(ADC1, 1, ADC_CHANNEL_13, ADC_SAMPLETIME_144);
+        adc_regular_channel_config(ADC1, 0, ADC_CHANNEL_15, ADC_SAMPLETIME_144);
+    } else {
+        /* 跟随模式 */
+        adc_sync_mode_config(ADC_DAUL_REGULAL_FOLLOW_UP);
+        adc_regular_channel_config(ADC0, 0, ADC_CHANNEL_13, ADC_SAMPLETIME_480);
+        adc_regular_channel_config(ADC0, 1, ADC_CHANNEL_15, ADC_SAMPLETIME_480);
+        adc_regular_channel_config(ADC1, 1, ADC_CHANNEL_13, ADC_SAMPLETIME_480);
+        adc_regular_channel_config(ADC1, 0, ADC_CHANNEL_15, ADC_SAMPLETIME_480);
+    }
+
     adc_sync_dma_config(ADC_SYNC_DMA_MODE1);
     adc_sync_dma_request_after_last_enable();
     adc_data_alignment_config(ADC0, ADC_DATAALIGN_RIGHT);
@@ -90,13 +112,11 @@ static void adc_dual_dma_config(void) {
     adc_special_function_config(ADC1, ADC_SCAN_MODE, ENABLE);
     adc_channel_length_config(ADC0, ADC_REGULAR_CHANNEL, 2);
     adc_channel_length_config(ADC1, ADC_REGULAR_CHANNEL, 2);
-    adc_regular_channel_config(ADC0, 0, ADC_CHANNEL_13, ADC_SAMPLETIME_480);
-    adc_regular_channel_config(ADC0, 1, ADC_CHANNEL_15, ADC_SAMPLETIME_480);
-    adc_regular_channel_config(ADC1, 1, ADC_CHANNEL_13, ADC_SAMPLETIME_480);
-    adc_regular_channel_config(ADC1, 0, ADC_CHANNEL_15, ADC_SAMPLETIME_480);
+    
     adc_external_trigger_config(ADC0, ADC_REGULAR_CHANNEL, EXTERNAL_TRIGGER_RISING);
     adc_external_trigger_config(ADC1, ADC_REGULAR_CHANNEL, EXTERNAL_TRIGGER_DISABLE);
     adc_external_trigger_source_config(ADC0, ADC_REGULAR_CHANNEL, ADC_EXTTRIG_REGULAR_T1_CH1);
+    
     adc_enable(ADC0); adc_calibration_enable(ADC0);
     adc_enable(ADC1); adc_calibration_enable(ADC1);
 }
@@ -108,9 +128,19 @@ static void adc_dual_dma_config(void) {
     \retval     无
 */
 void bsp_adc_init(bsp_adc_mode_enum mode) {
+    /* 切换模式前，先强制关闭所有相关外设，防止硬件死锁 */
+    dma_channel_disable(DMA1, DMA_CH0);
+    timer_disable(TIMER1);
+    adc_disable(ADC0);
+    adc_disable(ADC1);
+
     g_adc_mode = mode;
-    if (mode == BSP_ADC_MODE_INTERNAL) adc_internal_config();
-    else adc_dual_dma_config();
+    
+    if (mode == BSP_ADC_MODE_INTERNAL) {
+        adc_internal_config();
+    } else {
+        adc_dual_dma_config(mode);
+    }
 }
 
 /*!

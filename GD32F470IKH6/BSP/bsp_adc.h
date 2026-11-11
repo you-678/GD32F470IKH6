@@ -6,18 +6,21 @@
 /*!
     \brief      ADC 工作模式枚举
       \arg        BSP_ADC_MODE_INTERNAL: 内部通道模式 (采集温度/Vref/Vbat)，软件触发
-      \arg        BSP_ADC_MODE_DUAL_DMA: 双ADC同步DMA模式 (采集CH13/CH15)，硬件定时器触发
+      \arg        BSP_ADC_MODE_DUAL_DMA_FOLLOW_UP: 双ADC跟随模式 (采集CH13/CH15)，硬件定时器触发
+      \arg        BSP_ADC_MODE_DUAL_DMA_PARALLEL: 双ADC并行模式 (采集CH13/CH15)，硬件定时器触发
 */
 typedef enum { 
     BSP_ADC_MODE_INTERNAL = 0, 
-    BSP_ADC_MODE_DUAL_DMA      
+    BSP_ADC_MODE_DUAL_DMA_FOLLOW_UP,
+    BSP_ADC_MODE_DUAL_DMA_PARALLEL
 } bsp_adc_mode_enum;
 
 /*!
     \brief      初始化 ADC 硬件
     \param[in]  mode: 选择 ADC 工作模式
       \arg        BSP_ADC_MODE_INTERNAL: 内部通道软件触发
-      \arg        BSP_ADC_MODE_DUAL_DMA: 双通道DMA硬件触发
+      \arg        BSP_ADC_MODE_DUAL_DMA_FOLLOW_UP: 双通道DMA硬件触发 (跟随)
+      \arg        BSP_ADC_MODE_DUAL_DMA_PARALLEL: 双通道DMA硬件触发 (并行)
     \param[out] 无
     \retval     无
 */
