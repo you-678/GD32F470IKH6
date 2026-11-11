@@ -404,6 +404,11 @@
               <FileType>5</FileType>
               <FilePath>..\User\gd32f4xx_libopt.h</FilePath>
             </File>
+            <File>
+              <FileName>bsp_pin_def.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\User\bsp_pin_def.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

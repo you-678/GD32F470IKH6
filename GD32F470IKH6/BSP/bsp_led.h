@@ -3,31 +3,63 @@
 
 #include "gd32f4xx.h"
 
-typedef enum 
-{
-    LED1 = 0,
-    LED2 = 1,
-    LED3 = 2
+/*!
+    \brief      指示灯编号枚举
+      \arg        LED1: 指示灯1 (对应硬件引脚 PE2)
+      \arg        LED2: 指示灯2 (对应硬件引脚 PE3)
+      \arg        LED3: 指示灯3 (对应硬件引脚 PF10)
+      \arg        LEDn: 指示灯总数 (用于静态数组映射)
+*/
+typedef enum { 
+    LED1 = 0,   
+    LED2,       
+    LED3,       
+    LEDn        
 } led_typedef_enum;
 
-#define LEDn                             3U
-
-#define LED1_PIN                         GPIO_PIN_2
-#define LED1_GPIO_PORT                   GPIOE
-#define LED1_GPIO_CLK                    RCU_GPIOE
-  
-#define LED2_PIN                         GPIO_PIN_3
-#define LED2_GPIO_PORT                   GPIOE
-#define LED2_GPIO_CLK                    RCU_GPIOE
-  
-#define LED3_PIN                         GPIO_PIN_10
-#define LED3_GPIO_PORT                   GPIOF
-#define LED3_GPIO_CLK                    RCU_GPIOF
-
-
+/*!
+    \brief      初始化指定的指示灯引脚
+    \param[in]  lednum: 指示灯编号
+                  只能选择以下参数之一：
+      \arg        LED1: 指示灯1
+      \arg        LED2: 指示灯2
+      \arg        LED3: 指示灯3
+    \param[out] 无
+    \retval     无
+*/
 void bsp_led_init(led_typedef_enum lednum);
+
+/*!
+    \brief      点亮指定的指示灯
+    \param[in]  lednum: 指示灯编号
+      \arg        LED1: 指示灯1
+      \arg        LED2: 指示灯2
+      \arg        LED3: 指示灯3
+    \param[out] 无
+    \retval     无
+*/
 void bsp_led_on(led_typedef_enum lednum);
+
+/*!
+    \brief      熄灭指定的指示灯
+    \param[in]  lednum: 指示灯编号
+      \arg        LED1: 指示灯1
+      \arg        LED2: 指示灯2
+      \arg        LED3: 指示灯3
+    \param[out] 无
+    \retval     无
+*/
 void bsp_led_off(led_typedef_enum lednum);
+
+/*!
+    \brief      翻转指定的指示灯状态
+    \param[in]  lednum: 指示灯编号
+      \arg        LED1: 指示灯1
+      \arg        LED2: 指示灯2
+      \arg        LED3: 指示灯3
+    \param[out] 无
+    \retval     无
+*/
 void bsp_led_toggle(led_typedef_enum lednum);
 
 #endif

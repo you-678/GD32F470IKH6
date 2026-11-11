@@ -149,92 +149,26 @@ void SysTick_Handler(void)
 {
     delay_decrement();
 }
-/* EXTI0 单独中断：处理 WAKEUP(PA0/EXTI_0) */
+
+/*!
+    \brief      外部中断线 0 (EXTI_0) 中断服务函数 (对应 PA0)
+    \param[in]  无
+    \param[out] 无
+    \retval     无
+*/
 void EXTI0_IRQHandler(void)
 {
-    if (RESET != exti_interrupt_flag_get(EXTI_0))
-    {
-        exti_interrupt_flag_clear(EXTI_0);
-        bsp_led_toggle(LED1);   /* WAKEUP_KEY 触发 LED1 */
-    }
+    bsp_key_irq_handler(EXTI_0);
 }
 
-/* EXTI10~15 共用中断：处理 TAMPER(PC13/EXTI_13) 和 USER(PB14/EXTI_14) */
+/*!
+    \brief      外部中断线 10 到 15 (EXTI_10 ~ EXTI_15) 中断服务函数 (对应 PC13 / PB14)
+    \param[in]  无
+    \param[out] 无
+    \retval     无
+*/
 void EXTI10_15_IRQHandler(void)
 {
-    if (RESET != exti_interrupt_flag_get(EXTI_13))
-    {
-        exti_interrupt_flag_clear(EXTI_13);
-        bsp_led_toggle(LED2);   /* TAMPER_KEY 触发 LED2 */
-    }
-
-    if (RESET != exti_interrupt_flag_get(EXTI_14))
-    {
-        exti_interrupt_flag_clear(EXTI_14);
-        bsp_led_toggle(LED3);   /* USER_KEY 触发 LED3 */
-    }
+    bsp_key_irq_handler(EXTI_13);
+    bsp_key_irq_handler(EXTI_14);
 }
-/* 全局接收缓冲区和标志位 */
-uint8_t  rx_buffer[RX_BUFFER_SIZE];
-volatile uint16_t rx_index = 0;
-volatile uint8_t  rx_complete_flag = 0;
-
-/* USART0 中断服务函数 */
-void USART0_IRQHandler(void)
-{
-    /* 接收中断 */
-    if (usart_interrupt_flag_get(BSP_USART0_PERIPH, USART_INT_FLAG_RBNE) != RESET)
-    {
-        uint8_t data = (uint8_t)usart_data_receive(BSP_USART0_PERIPH);
-        
-        if (rx_index < RX_BUFFER_SIZE - 1) {
-            rx_buffer[rx_index++] = data;
-        }
-        
-        /* 简单约定：收到 '\n' 认为一帧结束 */
-        if (data == '\n') {
-            rx_buffer[rx_index] = '\0';   // 字符串结束符
-            rx_complete_flag = 1;
-        }
-    }
-    /* 可以在此添加错误中断处理 (USART_INT_FLAG_ERR) */
-}
-
-
-///* USART0 IDLE 中断：一帧接收结束 */
-//void USART0_IRQHandler(void)
-//{
-//    if (RESET != usart_interrupt_flag_get(BSP_USART0_PERIPH, USART_INT_FLAG_IDLE))
-//    {
-//        /* 清 IDLE 必须：先读 STAT0，再读 DATA，顺序不能反 */
-//        volatile uint32_t tmp;
-//        tmp = USART_STAT0(BSP_USART0_PERIPH);
-//        tmp = USART_DATA(BSP_USART0_PERIPH);
-//        (void)tmp;
-
-//        uint16_t remain = (uint16_t)dma_transfer_number_get(BSP_USART0_DMA,
-//                                                            BSP_USART0_RX_DMA_CH);
-//        dma_rx_len = (uint16_t)(DMA_RX_BUF_SIZE - remain);
-
-//        if (dma_rx_len > 0)
-//        {
-//            dma_rx_complete = 1;
-//        }
-//    }
-//}
-
-///* USART0 TX 的 DMA 通道（DMA1_CH7）传输完成中断 */
-//void DMA1_Channel7_IRQHandler(void)
-//{
-//    if (SET == dma_interrupt_flag_get(BSP_USART0_DMA,
-//                                      BSP_USART0_TX_DMA_CH,
-//                                      DMA_INT_FLAG_FTF))
-//    {
-//        dma_interrupt_flag_clear(BSP_USART0_DMA,
-//                                 BSP_USART0_TX_DMA_CH,
-//                                 DMA_INT_FLAG_FTF);
-//        dma_channel_disable(BSP_USART0_DMA, BSP_USART0_TX_DMA_CH);
-//        usart_dma_transmit_config(BSP_USART0_PERIPH, USART_DENT_ENABLE);
-//        dma_tx_complete = 1;
-//    }
-//}

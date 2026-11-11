@@ -1,53 +1,136 @@
 01_GPIO_Running_LED
-
-int main(void)
-{
+/*!
+    \brief      系统主函数 - 专测 LED (BSP层 + APP层)
+    \param[in]  无
+    \param[out] 无
+    \retval     无
+*/
+int main(void) {
+    /* 1. 初始化滴答定时器和串口 (为了打印测试进度) */
     systick_config();
-    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+    
+    printf("\r\n========================================\r\n");
+    printf("LED Ultimate Test Starts\r\n");
+    printf("========================================\r\n");
 
-    while(1)
-    {
-        app_led_flow_task();
+    /* =========================================================
+     * 第一部分：测试 BSP 底层函数
+     * ========================================================= */
+    
+    printf("[BSP Test 1] bsp_led_init (Init 3 LEDs)\r\n");
+    bsp_led_init(LED1);
+    bsp_led_init(LED2);
+    bsp_led_init(LED3);
+    delay_1ms(500);
+
+    printf("[BSP Test 2] bsp_led_on (Turn on one by one)\r\n");
+    bsp_led_on(LED1); delay_1ms(300);
+    bsp_led_on(LED2); delay_1ms(300);
+    bsp_led_on(LED3); delay_1ms(500);
+
+    printf("[BSP Test 3] bsp_led_off (Turn off one by one)\r\n");
+    bsp_led_off(LED1); delay_1ms(300);
+    bsp_led_off(LED2); delay_1ms(300);
+    bsp_led_off(LED3); delay_1ms(500);
+
+    printf("[BSP Test 4] bsp_led_toggle (Toggle one by one)\r\n");
+    bsp_led_toggle(LED1); delay_1ms(300); /* On */
+    bsp_led_toggle(LED2); delay_1ms(300); /* On */
+    bsp_led_toggle(LED3); delay_1ms(300); /* On */
+    bsp_led_toggle(LED1); delay_1ms(300); /* Off */
+    bsp_led_toggle(LED2); delay_1ms(300); /* Off */
+    bsp_led_toggle(LED3); delay_1ms(300); /* Off */
+    delay_1ms(500);
+
+
+    /* =========================================================
+     * 第二部分：测试 APP 业务层函数
+     * ========================================================= */
+    
+    printf("[APP Test 1] app_led_all_on (All On)\r\n");
+    app_led_all_on();
+    delay_1ms(1000);
+
+    printf("[APP Test 2] app_led_all_toggle (All Toggle)\r\n");
+    app_led_all_toggle();
+    delay_1ms(1000);
+
+    printf("[APP Test 3] app_led_all_off (All Off)\r\n");
+    app_led_all_on();   /* On first */
+    delay_1ms(500);
+    app_led_all_off();  /* Then Off */
+    delay_1ms(1000);
+
+    printf("[APP Test 4] app_led_flash (Flash 3 times)\r\n");
+    app_led_flash(3);
+    delay_1ms(500);
+
+    printf("[APP Test 5] app_led_flow_task (Run flow once)\r\n");
+    app_led_flow_task();
+    delay_1ms(1000);
+
+    printf("========================================\r\n");
+    printf("All LED functions tested OK! Enter while(1).\r\n");
+    printf("========================================\r\n");
+
+    /* 停在这里，防止反复重启测试 */
+    while(1) {
     }
 }
-现象：三灯以 1 秒/颗的节奏做 LED1→LED2→LED3 循环流水，周期 3 秒；
-但函数内是阻塞延时，执行期间 CPU 被独占 3 秒，主循环里其它任务（尤其串口 DMA 轮询）会被明显拖慢；
-且第 1 段漏关 LED2，在非理想初态下会出现"双灯同亮 1 秒"的异常。
 
 02_GPIO_Key_Polling_mode
 
-int main(void)
-{
-    systick_config();
-    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
-    bsp_key_init(KEY_WAKEUP, KEY_MODE_GPIO);bsp_key_init(KEY_TAMPER, KEY_MODE_GPIO);bsp_key_init(KEY_USER, KEY_MODE_GPIO);
-
-    while(1)
-    {
-        app_key_scan_task();
-    }
-}
-现象：三个按键（Wakeup/Tamper/User）按下后分别翻转 LED1/LED2/LED3，每个按键都带 100ms 消抖且用 `while` 死等松手；
-一旦某个键长按不放，程序就卡在该 `while` 里出不来，此时其它按键、LED 流水和串口 DMA 任务全部被阻塞——"按一下就变一下灯、长按就整机僵住"。
 
 03_EXTI_Key_Interrupt_mode
 
-int main(void)
-{
+/*!
+    \brief      系统主函数 - 按键阶段测试 (先全轮询，后全中断)
+    \param[in]  无
+    \param[out] 无
+    \retval     无
+*/
+int main(void) {
+    /* 1. 基础环境初始化 */
     systick_config();
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+    
+    bsp_led_init(LED1); 
+    bsp_led_init(LED2); 
+    bsp_led_init(LED3);
 
-    bsp_led_init(LED1);bsp_led_init(LED2);bsp_led_init(LED3);
-    bsp_key_init(KEY_WAKEUP, KEY_MODE_EXTI);bsp_key_init(KEY_TAMPER, KEY_MODE_EXTI);bsp_key_init(KEY_USER, KEY_MODE_EXTI);
+    /* =========================================================
+     * 阶段一：全轮询模式 (执行 15 秒)
+     * ========================================================= */
+    printf("\r\n========================================\r\n");
+    printf("STAGE 1: ALL POLLING MODE (15 seconds)\r\n");
+    printf("Press PA0, PC13, PB14 to test Polling.\r\n");
+    printf("========================================\r\n");
 
-    app_led_flash(1);  // 上电闪烁一次自检
+    /* 调用 APP 层初始化轮询 */
+    app_key_init_polling();
 
-    while(1)
-    {
-        /* 主循环空，全部由中断驱动LED翻转 */
+    /* 运行 15 秒的轮询测试 (每次 1ms，循环 15000 次) */
+    for (uint32_t i = 0; i < 15000; i++) {
+        app_key_polling_task(); /* 调用 APP 层轮询任务 */
+        delay_1ms(1);
+    }
+
+    /* =========================================================
+     * 阶段二：全中断模式 (死循环)
+     * ========================================================= */
+    printf("\r\n========================================\r\n");
+    printf("STAGE 2: ALL EXTI MODE (Infinite loop)\r\n");
+    printf("Press PA0, PC13, PB14 to test EXTI.\r\n");
+    printf("========================================\r\n");
+
+    /* 调用 APP 层初始化中断并注册回调 */
+    app_key_init_exti();
+
+    /* 进入死循环，硬件中断在后台自动触发，主循环啥也不干 */
+    while(1) {
     }
 }
-现象：三个按键走 EXTI 硬件中断，按下瞬间分别翻转 LED1（PA0/EXTI0）、LED2（PC13/EXTI13）、LED3（PB14/EXTI14），响应无需轮询、无延时消抖，
-但也没有硬件/软件消抖和松手处理——"按一下中断里翻一次灯，机械抖动和长按都可能被当成多次按下导致灯反复翻转、难以稳定停在期望状态"。
 
 04_USART_Printf
 

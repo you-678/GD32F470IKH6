@@ -94,4 +94,6 @@ OF SUCH DAMAGE.
 #include "app_usart.h"
 #include "app_adc.h"
 
+#include "bsp_pin_def.h"
+
 #endif /* GD32F4XX_LIBOPT_H */

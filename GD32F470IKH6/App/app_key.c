@@ -1,36 +1,110 @@
-#include "bsp_key.h"
+#include "app_key.h"
 
-void app_key_scan_task(void)
-{
-    /* æ£€æµ‹æŒ‰é”®æŒ‰ä¸‹ */
-    if(RESET == bsp_key_state_get(KEY_WAKEUP))
-    {
-        delay_1ms(100);    // è½¯ä»¶æ¶ˆæŠ–
-        if(RESET == bsp_key_state_get(KEY_WAKEUP))
-        {
-            bsp_led_toggle(LED1);   // ç¿»è½¬LED2
-            /* ç­‰å¾…æ¾æ‰‹ï¼Œé˜²æ­¢è¿ç»­è§¦å‘ï¼ˆå¯é€‰ï¼ŒåŸç‰ˆä¾‹ç¨‹æ²¡æœ‰æ¾æ‰‹ç­‰å¾…ï¼Œæˆ‘ä¿ç•™åŸç‰ˆè¡Œä¸ºï¼‰ */
-            while(RESET == bsp_key_state_get(KEY_WAKEUP));
+/* =========================================================
+ * ÄÚ²¿Ë½ÓĞº¯Êı£ºEXTI ÖĞ¶Ï»Øµ÷
+ * ========================================================= */
+
+/*!
+    \brief      PA0 °´¼üµÄÖĞ¶Ï»Øµ÷º¯Êı
+    \param[in]  keynum: ´¥·¢ÖĞ¶ÏµÄ°´¼ü±àºÅ
+    \param[out] ÎŞ
+    \retval     ÎŞ
+*/
+static void on_wakeup_exti(key_typedef_enum keynum) {
+    (void)keynum;
+    bsp_led_toggle(LED1);
+    printf("[EXTI Interrupt] PA0 Pressed! LED1 Toggle.\r\n");
+}
+
+/*!
+    \brief      PC13 °´¼üµÄÖĞ¶Ï»Øµ÷º¯Êı
+    \param[in]  keynum: ´¥·¢ÖĞ¶ÏµÄ°´¼ü±àºÅ
+    \param[out] ÎŞ
+    \retval     ÎŞ
+*/
+static void on_tamper_exti(key_typedef_enum keynum) {
+    (void)keynum;
+    bsp_led_toggle(LED2);
+    printf("[EXTI Interrupt] PC13 Pressed! LED2 Toggle.\r\n");
+}
+
+/*!
+    \brief      PB14 °´¼üµÄÖĞ¶Ï»Øµ÷º¯Êı
+    \param[in]  keynum: ´¥·¢ÖĞ¶ÏµÄ°´¼ü±àºÅ
+    \param[out] ÎŞ
+    \retval     ÎŞ
+*/
+static void on_user_exti(key_typedef_enum keynum) {
+    (void)keynum;
+    bsp_led_toggle(LED3);
+    printf("[EXTI Interrupt] PB14 Pressed! LED3 Toggle.\r\n");
+}
+
+/* =========================================================
+ * ¶ÔÍâ±©Â¶µÄ APP ²ã½Ó¿Ú
+ * ========================================================= */
+
+/*!
+    \brief      APP²ã°´¼ü³õÊ¼»¯ (ÅäÖÃÎªÂÖÑ¯Ä£Ê½)
+    \param[in]  ÎŞ
+    \param[out] ÎŞ
+    \retval     ÎŞ
+*/
+void app_key_init_polling(void) {
+    bsp_key_init(KEY_WAKEUP, KEY_MODE_GPIO);
+    bsp_key_init(KEY_TAMPER, KEY_MODE_GPIO);
+    bsp_key_init(KEY_USER,   KEY_MODE_GPIO);
+}
+
+/*!
+    \brief      APP²ã°´¼ü³õÊ¼»¯ (ÅäÖÃÎªÖĞ¶ÏÄ£Ê½²¢×¢²á»Øµ÷)
+    \param[in]  ÎŞ
+    \param[out] ÎŞ
+    \retval     ÎŞ
+*/
+void app_key_init_exti(void) {
+    bsp_key_init(KEY_WAKEUP, KEY_MODE_EXTI);
+    bsp_key_register_callback(KEY_WAKEUP, on_wakeup_exti);
+    
+    bsp_key_init(KEY_TAMPER, KEY_MODE_EXTI);
+    bsp_key_register_callback(KEY_TAMPER, on_tamper_exti);
+    
+    bsp_key_init(KEY_USER, KEY_MODE_EXTI);
+    bsp_key_register_callback(KEY_USER, on_user_exti);
+}
+
+/*!
+    \brief      APP²ã°´¼üÂÖÑ¯ÈÎÎñ (´øÏû¶¶ºÍËÉÊÖ¼ì²â£¬ĞèÔÚÖ÷Ñ­»·²»¶Ïµ÷ÓÃ)
+    \param[in]  ÎŞ
+    \param[out] ÎŞ
+    \retval     ÎŞ
+*/
+void app_key_polling_task(void) {
+    /* ¼ì²â PA0 */
+    if (bsp_key_state_get(KEY_WAKEUP) == 0) {
+        delay_1ms(20);
+        if (bsp_key_state_get(KEY_WAKEUP) == 0) {
+            bsp_led_toggle(LED1);
+            printf("[Polling] PA0 Pressed! LED1 Toggle.\r\n");
+            while(bsp_key_state_get(KEY_WAKEUP) == 0);
         }
     }
-		if(RESET == bsp_key_state_get(KEY_TAMPER))
-    {
-        delay_1ms(100);    // è½¯ä»¶æ¶ˆæŠ–
-        if(RESET == bsp_key_state_get(KEY_TAMPER))
-        {
-            bsp_led_toggle(LED2);   // ç¿»è½¬LED2
-            /* ç­‰å¾…æ¾æ‰‹ï¼Œé˜²æ­¢è¿ç»­è§¦å‘ï¼ˆå¯é€‰ï¼ŒåŸç‰ˆä¾‹ç¨‹æ²¡æœ‰æ¾æ‰‹ç­‰å¾…ï¼Œæˆ‘ä¿ç•™åŸç‰ˆè¡Œä¸ºï¼‰ */
-            while(RESET == bsp_key_state_get(KEY_TAMPER));
+    /* ¼ì²â PC13 */
+    if (bsp_key_state_get(KEY_TAMPER) == 0) {
+        delay_1ms(20);
+        if (bsp_key_state_get(KEY_TAMPER) == 0) {
+            bsp_led_toggle(LED2);
+            printf("[Polling] PC13 Pressed! LED2 Toggle.\r\n");
+            while(bsp_key_state_get(KEY_TAMPER) == 0);
         }
     }
-		if(RESET == bsp_key_state_get(KEY_USER))
-    {
-        delay_1ms(100);    // è½¯ä»¶æ¶ˆæŠ–
-        if(RESET == bsp_key_state_get(KEY_USER))
-        {
-            bsp_led_toggle(LED3);   // ç¿»è½¬LED2
-            /* ç­‰å¾…æ¾æ‰‹ï¼Œé˜²æ­¢è¿ç»­è§¦å‘ï¼ˆå¯é€‰ï¼ŒåŸç‰ˆä¾‹ç¨‹æ²¡æœ‰æ¾æ‰‹ç­‰å¾…ï¼Œæˆ‘ä¿ç•™åŸç‰ˆè¡Œä¸ºï¼‰ */
-            while(RESET == bsp_key_state_get(KEY_USER));
+    /* ¼ì²â PB14 */
+    if (bsp_key_state_get(KEY_USER) == 0) {
+        delay_1ms(20);
+        if (bsp_key_state_get(KEY_USER) == 0) {
+            bsp_led_toggle(LED3);
+            printf("[Polling] PB14 Pressed! LED3 Toggle.\r\n");
+            while(bsp_key_state_get(KEY_USER) == 0);
         }
     }
 }
