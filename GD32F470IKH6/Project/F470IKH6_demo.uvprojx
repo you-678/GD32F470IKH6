@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\Firmware\GD32F4xx_standard_peripheral\Include;..\Firmware\CMSIS;..\Firmware\CMSIS\GD\GD32F4xx\Include;..\User;..\BSP;..\Middlewares;..\App</IncludePath>
+              <IncludePath>..\Firmware\GD32F4xx_standard_peripheral\Include;..\Firmware\CMSIS;..\Firmware\CMSIS\GD\GD32F4xx\Include;..\User;..\BSP;..\Components\drivers;..\App</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -604,6 +604,11 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_dac.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -611,6 +616,13 @@
         </Group>
         <Group>
           <GroupName>Components</GroupName>
+          <Files>
+            <File>
+              <FileName>drv_at24c02.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\drivers\drv_at24c02.c</FilePath>
+            </File>
+          </Files>
         </Group>
         <Group>
           <GroupName>Services</GroupName>
@@ -642,6 +654,11 @@
               <FileName>app_dac.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\App\app_dac.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_i2c_eeprom.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_i2c_eeprom.c</FilePath>
             </File>
           </Files>
         </Group>

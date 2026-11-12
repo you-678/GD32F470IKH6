@@ -1,17 +1,20 @@
 #ifndef __BSP_I2C_H
 #define __BSP_I2C_H
 
-#include "gd32f4xx.h"
-
 /*!
     \brief      I2C 工作模式枚举
       \arg        BSP_I2C_MODE_HW: 使用芯片内置硬件 I2C 外设
       \arg        BSP_I2C_MODE_SW: 使用 GPIO 模拟软件 I2C 时序
+    \note       枚举必须定义在 #include "gd32f4xx.h" 之前：
+                gd32f4xx.h → gd32f4xx_libopt.h → app_i2c_eeprom.h
+                会用到 bsp_i2c_mode_enum，提前定义可打破循环包含
 */
 typedef enum {
     BSP_I2C_MODE_HW = 0,
     BSP_I2C_MODE_SW
 } bsp_i2c_mode_enum;
+
+#include "gd32f4xx.h"
 
 /*!
     \brief      初始化 I2C

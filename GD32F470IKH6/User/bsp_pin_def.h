@@ -3,11 +3,6 @@
 
 #include "gd32f4xx.h"
 
-/*!
-    \brief      硬件引脚与时钟映射宏定义
-    \note       换板子时，只需修改此文件，无需改动驱动层和业务层代码
-*/
-
 /* ====== LED 硬件定义 ====== */
 #define LED1_GPIO_CLK      RCU_GPIOE
 #define LED1_GPIO_PORT     GPIOE
@@ -51,13 +46,11 @@
 #define BSP_ADC_CH15_PIN        GPIO_PIN_5
 
 /* ====== DAC 硬件定义 ====== */
-/* ====== DAC 硬件定义 ====== */
 #define BSP_DAC_GPIO_CLK    RCU_GPIOA
 #define BSP_DAC_GPIO_PORT   GPIOA
 #define BSP_DAC_PIN         GPIO_PIN_4
 
-/* 当前库中，DAC0 直接代表输出通道0 */
-#define BSP_DAC_PERIPH      DAC0 
+#define BSP_DAC_PERIPH      DAC0
 
 /* =========================================================
  * 6. I2C / EEPROM 硬件映射

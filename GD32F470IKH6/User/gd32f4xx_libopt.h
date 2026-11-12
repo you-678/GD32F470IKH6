@@ -88,13 +88,16 @@ OF SUCH DAMAGE.
 #include "bsp_usart.h"
 #include "bsp_adc.h"
 #include "bsp_dac.h"
+#include "bsp_i2c.h"
 
+#include "drv_at24c02.h"
 
 #include "app_led.h"
 #include "app_key.h"
 #include "app_usart.h"
 #include "app_adc.h"
 #include "app_dac.h"
+#include "app_i2c_eeprom.h"
 
 #include "bsp_pin_def.h"
 
