@@ -2,9 +2,9 @@
 
 基于 **GD32470I-EVAL 评估板（主控 GD32F470IKH6，Cortex-M4）** 的 Keil MDK-ARM 单工程，把官方分散的入门 Demo 抽成 `BSP / App / User` 分层，并引入 `Components/drivers` 组件层与 `bsp_pin_def.h` 集中引脚定义，方便在一个工程里切换、对比 GPIO 轮询与中断、串口轮询与中断/DMA、单/双 ADC 同步、DAC 输出、I2C 读写 EEPROM 等写法。**换板子只改 `bsp_pin_def.h` 一个文件即可**。
 
-> **当前状态（以 `main.c` 为准）**：工程默认运行的是 **I2C-EEPROM 自检**——上电后初始化 USART0（用于打印进度），再以**硬件 I2C0** 初始化并探测板载/外接的 AT24C02，做「整片写入 0x00~0xFF → 整片读回比对」的一致性测试：通过则三灯循环单闪（LED1→LED2→LED3 各亮 500ms），失败则三灯常亮。LED / KEY / USART / ADC / DAC 的例程函数都在源码里，需按第 4.2 节手动改 `main.c` 才能跑。本 README 描述的是当前工作区已编译通过的版本。
+> **当前状态（以 `main.c` 为准）**：工程默认运行的是 **I2C-EEPROM 自检**，且现在是**两阶段**——上电后初始化 USART0（打印进度），先以**硬件 I2C0**（`BSP_I2C_MODE_HW`）初始化并探测板载/外接的 AT24C02，做「整片写入 0x00~0xFF → 整片读回比对」一致性测试，延时 1s 后再以**软件 I2C**（`BSP_I2C_MODE_SW`，GPIO 模拟 PB6/PB7）跑同样的测试，最后打印 `Both HW & SW Tested. Entering Loop` 进入死循环。循环里的 LED 表现由**最后一次（SW）测试结果**决定：通过则三灯循环单闪（LED1→LED2→LED3 各亮 500ms），失败则三灯常亮（HW/SW 复用同一总线，接好 EEPROM 两者都过、没接两者都败）。LED / KEY / USART / ADC / DAC 的例程函数都在源码里，需按第 4.2 节手动改 `main.c` 才能跑。本 README 描述的是当前工作区版本。
 
-> **文档基准（2026-11-12）**：本文的行为描述逐条对照当前工作区源码与工程配置核实，依据为 `User/main.c`、`User/bsp_pin_def.h`、`App/*.c`、`BSP/*.c/.h`、`Components/drivers/drv_at24c02.c`、中断文件 `User/gd32f4xx_it.c`、`User/gd32f4xx_libopt.h`、`Project/F470IKH6_demo.uvprojx`、`Project/Objects/F470IKH6_demo.build_log.htm`（本机 2026-11-12 14:38 的构建）。凡「只是函数、未被 main 调用」的能力都在第 4、7 节显式标注，**不计入默认功能**；复核方法见第 8 节。
+> **文档基准（2026-11-12）**：本文的行为描述逐条对照当前工作区源码与工程配置核实，依据为 `User/main.c`（当前为未提交版本，运行两阶段 HW→SW I2C 自检）、`User/bsp_pin_def.h`、`App/*.c`、`BSP/*.c/.h`、`Components/drivers/drv_at24c02.c`、中断文件 `User/gd32f4xx_it.c`、`User/gd32f4xx_libopt.h`、`Project/F470IKH6_demo.uvprojx`、`Project/Objects/F470IKH6_demo.build_log.htm`（本机 2026-11-12 14:38 的构建）。凡「只是函数、未被 main 调用」的能力都在第 4、7 节显式标注，**不计入默认功能**；复核方法见第 8 节。
 
 ---
 
@@ -36,7 +36,7 @@
 | DAC BSP+App | PA4，12 位右对齐；`bsp_dac_init()`（关触发、关波形、使能输出缓冲、初始 0V）、`bsp_dac_set_value()`（0~4095 → 0~VDDA）；`app_dac_scan_task()` 每 100ms 阶梯 +100（约 +0.08V），到顶转降、到底转升，非阻塞需循环调用 | `BSP/bsp_dac.c/.h`、`App/app_dac.c` | 可用（默认 main 未调用） |
 | I2C BSP | I2C0（SCL=PB6 / SDA=PB7，AF4，100kHz，开漏上拉）；**硬件 I2C**（`bsp_i2c_init(BSP_I2C_MODE_HW)`）+ **软件 I2C**（GPIO 模拟时序，两套都带超时与 `printf` 报错）对外统一接口 `bsp_i2c_write_bytes()` / `bsp_i2c_read_bytes()` / `bsp_i2c_wait_standby()` | `BSP/bsp_i2c.c/.h` | 可用（**默认 main 使用硬件模式**） |
 | AT24C02 组件驱动 | 芯片无关驱动：探测在线 `at24c02_init()`、单字节读写、按页写 `at24c02_write_buffer()`（内部自动分页）、连续读 `at24c02_read_buffer()`、整片写读一致性 `at24c02_test()`（256 字节全测） | `Components/drivers/drv_at24c02.c/.h` | 可用（被 I2C App 调用） |
-| I2C-EEPROM App | `app_i2c_eeprom_init(mode)`：初始化 LED（灭）、初始化 I2C、探测 AT24C02、跑一致性测试，通过置 `s_ok`；`app_i2c_eeprom_task()`：通过则三灯循环单闪，失败则三灯常亮 | `App/app_i2c_eeprom.c` | 可用（**默认 main 调用**） |
+| I2C-EEPROM App | `app_i2c_eeprom_init(mode)`：初始化 LED（灭）、初始化 I2C、探测 AT24C02、跑一致性测试，通过置 `s_ok`；`app_i2c_eeprom_task()`：通过则三灯循环单闪，失败则三灯常亮 | `App/app_i2c_eeprom.c` | 可用（**默认 main 调用两次：先 `BSP_I2C_MODE_HW`、延时 1s 后 `BSP_I2C_MODE_SW`，循环 LED 取最后一次 SW 结果**） |
 | 系统 / 中断 | `systick_config()` 配 1kHz SysTick → `delay_1ms()`；`EXTI0`/`EXTI10_15` 中断服务调用 `bsp_key_irq_handler()` 分发按键；`USART0_IRQHandler` 已下沉到 `BSP/bsp_usart.c` | `User/systick.c`、`User/gd32f4xx_it.c`、`BSP/bsp_usart.c` | 可用 |
 | 官方固件 | CMSIS（startup + `system_gd32f4xx.c`，25MHz HXTAL 经 PLL 配 200MHz 系统时钟）+ 整套 GD32F4xx 标准外设库（27 个 `.c`），全部加入工程编译 | `Firmware/CMSIS/`、`Firmware/GD32F4xx_standard_peripheral/` | 可用 |
 | 引脚集中定义 | 所有 LED/KEY/USART/ADC/DAC/I2C 的 GPIO 端口、引脚、时钟、AF、外设、中断号宏统一在此 | `User/bsp_pin_def.h` | 可用 |
@@ -110,12 +110,12 @@ cd GD32F470IKH6
 
 ## 4. 使用方法
 
-### 4.1 跑通默认例程（I2C-EEPROM 自检）
+### 4.1 跑通默认例程（I2C-EEPROM 两阶段自检：硬件 I2C → 软件 I2C）
 
 1. JP5 短接 1-2，串口线接 COM0，打开串口助手：**115200 / 8 数据位 / 1 停止位 / 无校验 / 无流控**。
-2. I2C0 总线（PB6/PB7）接好 AT24C02（地址 0xA0，SCL/SDA 各上拉 3.3V）。
+2. I2C 总线（PB6/PB7）接好 AT24C02（地址 0xA0，SCL/SDA 各上拉 3.3V）——硬件 I2C 与软件 I2C 复用同一组引脚/器件，只需接一份。
 3. 编译（F7）→ 下载（F8）→ 复位。
-4. 上电观察串口：先打印 I2C 模式/速度，再 `at24c02_init` / `at24c02_test` 进度，最后 `24C02 test OK!`；板上三灯开始循环单闪（约每 500ms 切换一颗）。**若没接 EEPROM，则打印 FAIL 且三灯常亮**。
+4. 上电观察串口：先打印 `Stage 1: Test Hardware I2C (HW)` 横幅与硬件 I2C 自检结果，停顿 1s 后打印 `Stage 2: Test Software I2C (SW)` 横幅与软件 I2C 自检结果，最后 `Both HW & SW Tested. Entering Loop`；板上三灯随后循环单闪（约每 500ms 切换一颗）。**若没接 EEPROM，两阶段都失败，循环里三灯常亮，串口两阶段均打印 `24C02 test FAIL!`**。
 
 ### 4.2 切换例程
 
@@ -251,9 +251,13 @@ void systick_config(void);     void delay_1ms(uint32_t ms);
 
 ### 5.2 输出
 
-**① 默认 `main.c` 上电后串口（节选，EEPROM 自检通过）**
+**① 默认 `main.c` 上电后串口（EEPROM 已接好，两阶段均通过）**
 
 ```
+========================================
+  Stage 1: Test Hardware I2C (HW)       
+========================================
+
 The I2C is hardware interface
 The speed is 100000
 before at24c02_init
@@ -261,9 +265,25 @@ at24c02_init ret = 0
 before at24c02_test
 at24c02_test ret = 0
 24C02 test OK!
+
+========================================
+  Stage 2: Test Software I2C (SW)       
+========================================
+
+The I2C is software interface
+The speed is 100000
+before at24c02_init
+at24c02_init ret = 0
+before at24c02_test
+at24c02_test ret = 0
+24C02 test OK!
+
+========================================
+  Both HW & SW Tested. Entering Loop    
+========================================
 ```
 
-> 若总线上无 AT24C02，则 `at24c02_init ret = 1` / `at24c02_test ret = 1` / `24C02 test FAIL!`，板上三灯**常亮**（而非循环单闪）。板上 LED 行为：通过 → 每 500ms 依次亮 LED1 / LED2 / LED3；失败 → LED1/2/3 全亮。
+> 若总线上无 AT24C02，则两阶段的 `at24c02_init ret = 1` / `at24c02_test ret = 1` / `24C02 test FAIL!`，循环里三灯**常亮**（而非循环单闪）。板上 LED 行为由最后一次（SW）测试结果决定：通过 → 每 500ms 依次亮 LED1 / LED2 / LED3；失败 → LED1/2/3 全亮。硬件 I2C 与软件 I2C 复用同一总线/器件，所以通常两者同过或同败。
 
 **② 切换为「串口 IRQ 回显」例程后**（`app_usart_task()` 在循环中）：
 
@@ -291,8 +311,8 @@ Changing baudrate to 9600...
 
 | 操作 | 预期 LED | 预期串口 |
 | --- | --- | --- |
-| 上电复位（EEPROM 已接好） | 先全灭，随后循环单闪 | 立刻打印 I2C 模式/速度 + `24C02 test OK!` |
-| 上电复位（无 EEPROM） | 三灯常亮 | 打印 `24C02 test FAIL!` |
+| 上电复位（EEPROM 已接好） | 先全灭，HW→SW 两阶段自检后循环单闪 | 依次打印 `Stage 1 HW` → `Stage 2 SW` 自检结果 + `Both HW & SW Tested. Entering Loop` |
+| 上电复位（无 EEPROM） | 两阶段均失败，三灯常亮 | 两阶段均打印 `24C02 test FAIL!` |
 | 向串口发数据 | 无变化 | 无应答（默认 main 跑 PRINTF 模式，不接收） |
 | 按任意键 | 无变化 | 无输出（默认 main 不读键） |
 
@@ -325,7 +345,7 @@ GD32F470IKH6/                        # 仓库根目录
 
 ## 7. 当前状态与已知限制
 
-- 默认 `main.c` 只跑 `app_i2c_eeprom_init()` / `app_i2c_eeprom_task()`；`app_led_*`、`app_key_*`、`app_usart_task()`、`app_adc_*`、`app_dac_scan_task()` 都不在 `main` 循环里，需按第 4.2 节手动改 `main.c`。
+- 默认 `main.c` 跑两阶段 I2C-EEPROM 自检：先 `app_i2c_eeprom_init(BSP_I2C_MODE_HW)`，延时 1s 后 `app_i2c_eeprom_init(BSP_I2C_MODE_SW)`，再进入 `while(1) app_i2c_eeprom_task()`；循环 LED 行为由最后一次（SW）测试结果决定。`app_led_*`、`app_key_*`、`app_usart_task()`、`app_adc_*`、`app_dac_scan_task()` 都不在 `main` 循环里，需按第 4.2 节手动改 `main.c`。
 - 默认例程依赖 I2C0 总线上的 AT24C02 器件；板载评估板若无该 EEPROM，自检会 FAIL（三灯常亮），属预期行为。
 - 按键中断为**上升沿触发**：评估板按键按下为低电平，松开回到高电平，因此回调在松手瞬间触发（见第 4.2、5.2 节）。若希望「按下即触发」，把 `bsp_key.c` 里 `exti_init(..., EXTI_TRIG_RISING)` 改成 `EXTI_TRIG_FALLING` 即可。
 - `app_key_polling_task()` 用 `while(...==0)` 死等松手，长按会阻塞整个主循环；`app_led_flow_task()` 为阻塞延时，约 3 秒跑完一轮。

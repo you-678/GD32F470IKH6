@@ -71,6 +71,12 @@ Project_Root/
  │
  └── 8_Doc/                    // 文档 (README, 硬件引脚表, 通信协议手册)
 
+注：以上为「规划中的分层目录」示意（编号 0~8 对应 BSP/App/Components 等
+分层理念）。仓库实际采用扁平布局：根目录下为 Project/ User/ BSP/ App/
+Components/ OSAL/ Services/ Firmware/ Doc/ .vscode/，目录名与树中编号一一
+对应（如 1_BSP→BSP/，3_Components→Components/，6_Core→User/），真实结构
+以根目录 README 第 6 节「目录结构」为准。
+
 ----------------------------------------------------------------
 二、示例例程总览（Example Routine Catalog，共 29 个）
 ----------------------------------------------------------------
@@ -132,6 +138,11 @@ Project_Root/
 代码中的 BSP/APP 接口（如 bsp_led_xxx / app_led_xxx / bsp_usart_xxx
 / bsp_adc_xxx / app_adc_xxx / bsp_dac_xxx）即为第一章架构中 1_BSP、
 5_App 层对外暴露的调用函数。
+
+注：本节末尾另附「当前工程默认 main.c」一段——即仓库实际烧录运行的
+两阶段 I2C 自检程序（硬件 I2C → 软件 I2C），与根目录 README 第 4.1 /
+5.2 节描述的默认例程一致；其上 01 / 03 / 06 / 09 / 10 为可切换的示例
+例程，需替换 main.c 主体后重新编译。
 
 ================================================================
 01_GPIO_Running_LED
@@ -433,5 +444,61 @@ int main(void) {
         
         /* 延时 10ms 作为系统心跳 */
         delay_1ms(10);
+    }
+}
+
+
+================================================================
+当前工程默认 main.c（两阶段 I2C 自检：硬件 I2C → 软件 I2C）
+================================================================
+/*!
+    \brief      系统主函数 - 当前仓库默认行为（EEPROM 两阶段自检）
+    \param[in]  无
+    \param[out] 无
+    \retval     无
+    说明：上电后先以硬件 I2C0（BSP_I2C_MODE_HW）初始化并探测 AT24C02，
+          做整片「写 0x00~0xFF → 读回比对」一致性测试，延时 1s 后再以
+          软件 I2C（BSP_I2C_MODE_SW，GPIO 模拟 PB6/PB7）跑同样测试，
+          最后打印 "Both HW & SW Tested. Entering Loop" 进入死循环。
+          循环里 LED 表现由最后一次（SW）测试结果决定：
+          通过 → 三灯循环单闪（LED1→LED2→LED3 各 500ms）；
+          失败 → 三灯常亮。
+          硬件 I2C 与软件 I2C 复用同一总线/器件，通常两者同过或同败。
+          本段即为仓库实际烧录运行的 main.c，与根目录 README 第 4.1 / 5.2
+          节描述的默认例程一致。
+*/
+int main(void)
+{
+    systick_config();
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+
+    printf("\r\n\r\n");
+    printf("========================================\r\n");
+    printf("  Stage 1: Test Hardware I2C (HW)       \r\n");
+    printf("========================================\r\n");
+    
+    /* 1. 测试硬件 I2C */
+    app_i2c_eeprom_init(BSP_I2C_MODE_HW);
+    delay_1ms(1000); /* 稍作延时，避免打印太快 */
+
+
+    printf("\r\n\r\n");
+    printf("========================================\r\n");
+    printf("  Stage 2: Test Software I2C (SW)       \r\n");
+    printf("========================================\r\n");
+    
+    /* 2. 测试软件 I2C */
+    app_i2c_eeprom_init(BSP_I2C_MODE_SW);
+    delay_1ms(1000);
+
+
+    printf("\r\n\r\n");
+    printf("========================================\r\n");
+    printf("  Both HW & SW Tested. Entering Loop    \r\n");
+    printf("========================================\r\n");
+
+    /* 3. 进入主循环 (跑马灯或全亮，取决于最后一次测试结果) */
+    while (1) {
+        app_i2c_eeprom_task();
     }
 }
