@@ -1,4 +1,4 @@
-hello kiona
+
 # GD32F470IKH6 裸机学习工程
 
 基于 **GD32470I-EVAL 评估板（主控 GD32F470IKH6，Cortex-M4）** 的 Keil MDK-ARM 单工程，把官方分散的入门 Demo 抽成 `BSP / App / User` 分层，并引入 `Components/drivers` 组件层与 `bsp_pin_def.h` 集中引脚定义，方便在一个工程里切换、对比 GPIO 轮询与中断、串口轮询与中断/DMA、单/双 ADC 同步、DAC 输出、I2C 读写 EEPROM 等写法。**换板子只改 `bsp_pin_def.h` 一个文件即可**。
