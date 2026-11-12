@@ -59,4 +59,19 @@
 /* 当前库中，DAC0 直接代表输出通道0 */
 #define BSP_DAC_PERIPH      DAC0 
 
+/* =========================================================
+ * 6. I2C / EEPROM 硬件映射
+ * ========================================================= */
+#define BSP_I2C_PERIPH          I2C0
+#define BSP_I2C_RCU             RCU_I2C0
+#define BSP_I2C_GPIO_RCU        RCU_GPIOB
+#define BSP_I2C_GPIO_PORT       GPIOB
+
+#define BSP_I2C_SCL_PIN         GPIO_PIN_6
+#define BSP_I2C_SDA_PIN         GPIO_PIN_7
+#define BSP_I2C_AF              GPIO_AF_4
+
+#define BSP_EEPROM_ADDR         0xA0    /* AT24C02 默认地址 */
+#define BSP_EEPROM_PAGE_SIZE    8       /* AT24C02 页大小为8字节 */
+
 #endif

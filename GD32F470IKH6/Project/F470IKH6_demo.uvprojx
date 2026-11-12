@@ -607,7 +607,13 @@
           </Files>
         </Group>
         <Group>
-          <GroupName>Middlewares</GroupName>
+          <GroupName>OSAL</GroupName>
+        </Group>
+        <Group>
+          <GroupName>Components</GroupName>
+        </Group>
+        <Group>
+          <GroupName>Services</GroupName>
         </Group>
         <Group>
           <GroupName>App</GroupName>
