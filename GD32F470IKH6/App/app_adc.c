@@ -1,7 +1,4 @@
 #include "app_adc.h"
-#include "bsp_adc.h"
-#include "systick.h"
-#include <stdio.h>
 
 /*!
     \brief      ADC 内部通道采集任务

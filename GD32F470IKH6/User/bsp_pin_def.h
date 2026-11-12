@@ -50,4 +50,13 @@
 #define BSP_ADC_CH13_PIN        GPIO_PIN_3
 #define BSP_ADC_CH15_PIN        GPIO_PIN_5
 
+/* ====== DAC 硬件定义 ====== */
+/* ====== DAC 硬件定义 ====== */
+#define BSP_DAC_GPIO_CLK    RCU_GPIOA
+#define BSP_DAC_GPIO_PORT   GPIOA
+#define BSP_DAC_PIN         GPIO_PIN_4
+
+/* 当前库中，DAC0 直接代表输出通道0 */
+#define BSP_DAC_PERIPH      DAC0 
+
 #endif
