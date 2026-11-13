@@ -1,60 +1,53 @@
 #include "gd32f4xx.h"
 #include "gd32f4xx_it.h"
 #include "main.h"
-//#include "gd32f470i_eval.h"
-#include "drv_i2s_player.h"
 
-static drv_i2s_player_t s_player;
-
-static void test_hw(void)
-{
-    printf("\r\n---- HARDWARE I2S ----\r\n");
-    bsp_i2s_init_mode(BSP_I2S_BUS_AUDIO, BSP_I2S_MODE_HW);
-
-    int rc = drv_i2s_player_play_blocking(&s_player, wavetestdata, wavetestdata_len);
-    if (rc != 0) {
-        printf("[HW] FAILED rc=%d\r\n", rc);
-        return;
-    }
-    printf("[HW] rate=%lu ch=%u bits=%u frames=%lu\r\n",
-           (unsigned long)s_player.wav.sample_rate,
-           s_player.wav.num_channels,
-           s_player.wav.bits_per_sample,
-           (unsigned long)s_player.wav.total_frames);
-    printf("[HW] PASS\r\n");
-}
-
-static void test_sw(void)
-{
-    printf("\r\n---- SOFTWARE I2S ----\r\n");
-    bsp_i2s_init_mode(BSP_I2S_BUS_AUDIO, BSP_I2S_MODE_SW);
-
-    int rc = drv_i2s_player_play_blocking(&s_player, wavetestdata, wavetestdata_len);
-    if (rc != 0) {
-        printf("[SW] FAILED rc=%d\r\n", rc);
-        return;
-    }
-    printf("[SW] PASS\r\n");
-}
-
-int main(void)
-{
+int main(void) {
     systick_config();
-	bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+    
+    bsp_led_init(LED1);
+    bsp_led_init(LED2);
+    bsp_led_init(LED3);
 
-    nvic_priority_group_set(NVIC_PRIGROUP_PRE0_SUB4);
-    nvic_irq_enable(BSP_I2S_AUDIO_IRQn, 0, 1);
+    printf("\r\n========================================\r\n");
+    printf("GD32F470 Full Test Boot\r\n");
+    printf("========================================\r\n");
 
-    drv_i2s_player_init(&s_player, BSP_I2S_BUS_AUDIO);
+    /* =========================================================
+     * 阶段一：按键轮询测试 (5 秒)
+     * ========================================================= */
+    printf("\r\n[STAGE 1] POLLING TEST (5 seconds)...\r\n");
+    printf("Press PA0/PC13/PB14 to toggle LEDs.\r\n");
 
-    printf("\r\n===== I2S Player Self Test =====\r\n");
-    printf("WAV: %lu bytes\r\n", (unsigned long)wavetestdata_len);
+    app_key_init_polling();
+    for (uint32_t i = 0; i < 5000; i++) {
+        app_key_polling_task();
+        delay_1ms(1);
+    }
 
-    test_hw();
-    delay_1ms(500);
-    test_sw();
+    /* =========================================================
+     * 阶段二：EXMC 三项存储测试 (SDRAM -> SLEEP -> NAND)
+     * ========================================================= */
+    printf("\r\n[STAGE 2] EXMC STORAGE TEST...\r\n");
+    
+    for (int m = 0; m < STORAGE_MODE_MAX; m++) {
+        drv_storage_run((storage_mode_t)m);
+        delay_1ms(1000);
+    }
 
-    printf("\r\n===== ALL DONE =====\r\n");
+    /* =========================================================
+     * 阶段三：大满贯结束，按键功能恢复
+     * ========================================================= */
+    printf("\r\n========================================\r\n");
+    printf("ALL TESTS COMPLETED SUCCESSFULLY!\r\n");
+    printf("You can still press keys to toggle LEDs.\r\n");
+    printf("========================================\r\n");
 
-    while (1) { delay_1ms(1000); }
+    /* 把按键切回中断模式，死循环里按啥亮啥 */
+    app_key_init_exti(); 
+    
+    while (1) {
+        delay_1ms(1000);
+    }
 }

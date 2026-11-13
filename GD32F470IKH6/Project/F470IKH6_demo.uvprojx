@@ -619,6 +619,11 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_i2s.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_exmc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_exmc.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -651,6 +656,11 @@
               <FileName>wave_data.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Components\drivers\wave_data.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_storage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\drivers\drv_storage.c</FilePath>
             </File>
           </Files>
         </Group>

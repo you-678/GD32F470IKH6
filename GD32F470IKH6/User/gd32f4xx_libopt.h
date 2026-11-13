@@ -95,12 +95,15 @@ OF SUCH DAMAGE.
 #include "bsp_i2c.h"
 #include "bsp_spi.h"
 #include "bsp_i2s.h"
+#include "bsp_exmc.h"
+
 
 #include "drv_at24c02.h"
 #include "drv_gd25qxx.h"
 //#include "drv_i2s_player.h"
 #include "drv_wav.h"
 #include "wave_data.h"
+#include "drv_storage.h"
 
 #include "app_led.h"
 #include "app_key.h"

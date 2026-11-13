@@ -128,4 +128,24 @@
 #define BSP_I2S_SD_PIN             GPIO_PIN_1
 #define BSP_I2S_SD_AF              GPIO_AF_7
 
+/* ============================================================================
+ * 六、EXMC 外部存储总线（SDRAM + NAND 共用）
+ * ========================================================================== */
+#define BSP_EXMC_RCU              RCU_EXMC
+#define BSP_SDRAM_BASE            ((uint32_t)0xC0000000U)
+#define BSP_SDRAM_SIZE            (32U * 1024U * 1024U)
+
+#define BSP_NAND_BASE             ((uint32_t)0x70000000U)
+#define BSP_NAND_CMD_OFS          (1U << 16)
+#define BSP_NAND_ADDR_OFS         (1U << 17)
+#define BSP_NAND_DATA_OFS         (0U)
+
+#define BSP_NAND_ZONE_COUNT       1U
+#define BSP_NAND_ZONE_SIZE        1024U
+#define BSP_NAND_BLOCK_SIZE       64U
+#define BSP_NAND_PAGE_SIZE        2048U
+#define BSP_NAND_SPARE_SIZE       128U
+#define BSP_NAND_PAGE_TOTAL       (BSP_NAND_PAGE_SIZE + BSP_NAND_SPARE_SIZE)
+#define BSP_NAND_BLOCK_COUNT      (BSP_NAND_ZONE_COUNT * BSP_NAND_ZONE_SIZE)
+#define BSP_NAND_MAX_ADDR         (BSP_NAND_BLOCK_COUNT * BSP_NAND_BLOCK_SIZE * BSP_NAND_PAGE_SIZE)
 #endif
