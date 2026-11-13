@@ -609,6 +609,16 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_i2s.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_i2s.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -621,6 +631,26 @@
               <FileName>drv_at24c02.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Components\drivers\drv_at24c02.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_gd25qxx.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\drivers\drv_gd25qxx.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_i2s_player.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\drivers\drv_i2s_player.c</FilePath>
+            </File>
+            <File>
+              <FileName>drv_wav.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\drivers\drv_wav.c</FilePath>
+            </File>
+            <File>
+              <FileName>wave_data.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\drivers\wave_data.c</FilePath>
             </File>
           </Files>
         </Group>

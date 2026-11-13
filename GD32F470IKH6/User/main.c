@@ -2,39 +2,59 @@
 #include "gd32f4xx_it.h"
 #include "main.h"
 //#include "gd32f470i_eval.h"
+#include "drv_i2s_player.h"
+
+static drv_i2s_player_t s_player;
+
+static void test_hw(void)
+{
+    printf("\r\n---- HARDWARE I2S ----\r\n");
+    bsp_i2s_init_mode(BSP_I2S_BUS_AUDIO, BSP_I2S_MODE_HW);
+
+    int rc = drv_i2s_player_play_blocking(&s_player, wavetestdata, wavetestdata_len);
+    if (rc != 0) {
+        printf("[HW] FAILED rc=%d\r\n", rc);
+        return;
+    }
+    printf("[HW] rate=%lu ch=%u bits=%u frames=%lu\r\n",
+           (unsigned long)s_player.wav.sample_rate,
+           s_player.wav.num_channels,
+           s_player.wav.bits_per_sample,
+           (unsigned long)s_player.wav.total_frames);
+    printf("[HW] PASS\r\n");
+}
+
+static void test_sw(void)
+{
+    printf("\r\n---- SOFTWARE I2S ----\r\n");
+    bsp_i2s_init_mode(BSP_I2S_BUS_AUDIO, BSP_I2S_MODE_SW);
+
+    int rc = drv_i2s_player_play_blocking(&s_player, wavetestdata, wavetestdata_len);
+    if (rc != 0) {
+        printf("[SW] FAILED rc=%d\r\n", rc);
+        return;
+    }
+    printf("[SW] PASS\r\n");
+}
 
 int main(void)
 {
     systick_config();
-    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+	bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
 
-    printf("\r\n\r\n");
-    printf("========================================\r\n");
-    printf("  Stage 1: Test Hardware I2C (HW)       \r\n");
-    printf("========================================\r\n");
-    
-    /* 1. 测试硬件 I2C */
-    app_i2c_eeprom_init(BSP_I2C_MODE_HW);
-    delay_1ms(1000); /* 稍作延时，避免打印太快 */
+    nvic_priority_group_set(NVIC_PRIGROUP_PRE0_SUB4);
+    nvic_irq_enable(BSP_I2S_AUDIO_IRQn, 0, 1);
 
+    drv_i2s_player_init(&s_player, BSP_I2S_BUS_AUDIO);
 
-    printf("\r\n\r\n");
-    printf("========================================\r\n");
-    printf("  Stage 2: Test Software I2C (SW)       \r\n");
-    printf("========================================\r\n");
-    
-    /* 2. 测试软件 I2C */
-    app_i2c_eeprom_init(BSP_I2C_MODE_SW);
-    delay_1ms(1000);
+    printf("\r\n===== I2S Player Self Test =====\r\n");
+    printf("WAV: %lu bytes\r\n", (unsigned long)wavetestdata_len);
 
+    test_hw();
+    delay_1ms(500);
+    test_sw();
 
-    printf("\r\n\r\n");
-    printf("========================================\r\n");
-    printf("  Both HW & SW Tested. Entering Loop    \r\n");
-    printf("========================================\r\n");
+    printf("\r\n===== ALL DONE =====\r\n");
 
-    /* 3. 进入主循环 (跑马灯或全亮，取决于最后一次测试结果) */
-    while (1) {
-        app_i2c_eeprom_task();
-    }
+    while (1) { delay_1ms(1000); }
 }

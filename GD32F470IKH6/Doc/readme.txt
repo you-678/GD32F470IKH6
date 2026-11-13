@@ -502,3 +502,106 @@ int main(void)
         app_i2c_eeprom_task();
     }
 }
+
+
+
+/* ================= Flash 绑定 ================= */
+static gd25qxx_dev_t s_flash;
+
+static uint8_t xfer(uint8_t t) { return bsp_spi_transfer(BSP_SPI_BUS_FLASH, t); }
+static void    csl(void)       { bsp_spi_cs_low(BSP_SPI_BUS_FLASH); }
+static void    csh(void)       { bsp_spi_cs_high(BSP_SPI_BUS_FLASH); }
+static void    qr(void)        { bsp_spi_quad_enter_read(BSP_SPI_BUS_FLASH); }
+static void    qw(void)        { bsp_spi_quad_enter_write(BSP_SPI_BUS_FLASH); }
+static void    qx(void)        { bsp_spi_quad_exit(BSP_SPI_BUS_FLASH); }
+
+/* ================= 单次测试 ================= */
+#define TEST_ADDR   0x000000u
+#define TEST_SIZE   512u
+
+static int flash_test(bsp_spi_mode_t mode)
+{
+    static uint8_t tx[TEST_SIZE];
+    static uint8_t rx[TEST_SIZE];
+    const char *name = (mode == BSP_SPI_MODE_HW) ? "HARDWARE" : "SOFTWARE";
+    int use_quad;
+
+    printf("\r\n========== %s SPI test ==========\r\n", name);
+
+    bsp_spi_init_mode(BSP_SPI_BUS_FLASH, mode);
+    use_quad = bsp_spi_supports_quad(BSP_SPI_BUS_FLASH);
+
+    gd25qxx_bind(&s_flash, xfer, csl, csh,
+                 use_quad ? qr : NULL,
+                 use_quad ? qw : NULL,
+                 use_quad ? qx : NULL);
+
+    if (gd25qxx_probe(&s_flash) != GD25QXX_OK) {
+        printf("[%s] probe FAILED, id=0x%06lX\r\n",
+               name, (unsigned long)s_flash.id);
+        return -1;
+    }
+    printf("[%s] id=0x%06lX, cap=%luKB, quad=%s\r\n",
+           name, (unsigned long)s_flash.id,
+           (unsigned long)(s_flash.capacity / 1024),
+           use_quad ? "yes" : "no");
+
+    if (use_quad) gd25qxx_quad_enable(&s_flash);
+
+    for (uint32_t i = 0; i < TEST_SIZE; i++) tx[i] = (uint8_t)i;
+    memset(rx, 0, sizeof(rx));
+
+    int rc = gd25qxx_erase_sector(&s_flash, TEST_ADDR);
+    if (rc != GD25QXX_OK) {
+        printf("[%s] erase FAILED, rc=%d\r\n", name, rc);
+        return rc;
+    }
+
+    rc = gd25qxx_quad_write(&s_flash, tx, TEST_ADDR, TEST_SIZE);
+    if (rc != GD25QXX_OK) {
+        printf("[%s] write FAILED, rc=%d\r\n", name, rc);
+        return rc;
+    }
+
+    rc = gd25qxx_quad_read(&s_flash, rx, TEST_ADDR, TEST_SIZE);
+    if (rc != GD25QXX_OK) {
+        printf("[%s] read FAILED, rc=%d\r\n", name, rc);
+        return rc;
+    }
+
+    if (memcmp(tx, rx, TEST_SIZE) != 0) {
+        printf("[%s] verify FAILED\r\n", name);
+        for (uint32_t i = 0; i < TEST_SIZE; i++) {
+            if (tx[i] != rx[i]) {
+                printf("  mismatch @ %lu: tx=0x%02X rx=0x%02X\r\n",
+                       (unsigned long)i, tx[i], rx[i]);
+                break;
+            }
+        }
+        return -2;
+    }
+
+    printf("[%s] PASSED\r\n", name);
+    return 0;
+}
+
+/* ================= 入口 ================= */
+int main(void)
+{
+    systick_config();
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+
+    printf("\r\n===== GD25Qxx dual-mode self test (direct QCTL) =====\r\n");
+
+    int r_hw = flash_test(BSP_SPI_MODE_HW);
+    delay_1ms(10);
+    int r_sw = flash_test(BSP_SPI_MODE_SW);
+
+    printf("\r\n===== RESULT =====\r\n");
+    printf("  HARDWARE SPI : %s\r\n", r_hw == 0 ? "PASS" : "FAIL");
+    printf("  SOFTWARE SPI : %s\r\n", r_sw == 0 ? "PASS" : "FAIL");
+
+    while (1) {
+        delay_1ms(1000);
+    }
+}

@@ -35,6 +35,10 @@ OF SUCH DAMAGE.
 #ifndef GD32F4XX_LIBOPT_H
 #define GD32F4XX_LIBOPT_H
 
+#ifdef __cplusplus
+ extern "C" {
+#endif
+	 
 #if defined (GD32F450) || defined (GD32F405) || defined (GD32F407) || defined (GD32F470) || defined (GD32F425) || defined (GD32F427)
     #include "gd32f4xx_rcu.h"
     #include "gd32f4xx_adc.h"
@@ -89,8 +93,14 @@ OF SUCH DAMAGE.
 #include "bsp_adc.h"
 #include "bsp_dac.h"
 #include "bsp_i2c.h"
+#include "bsp_spi.h"
+#include "bsp_i2s.h"
 
 #include "drv_at24c02.h"
+#include "drv_gd25qxx.h"
+//#include "drv_i2s_player.h"
+#include "drv_wav.h"
+#include "wave_data.h"
 
 #include "app_led.h"
 #include "app_key.h"
@@ -100,5 +110,9 @@ OF SUCH DAMAGE.
 #include "app_i2c_eeprom.h"
 
 #include "bsp_pin_def.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* GD32F4XX_LIBOPT_H */

@@ -67,4 +67,65 @@
 #define BSP_EEPROM_ADDR         0xA0    /* AT24C02 默认地址 */
 #define BSP_EEPROM_PAGE_SIZE    8       /* AT24C02 页大小为8字节 */
 
+/* ============================================================================
+ * 二、SPI Flash（GD25Qxx，硬件 SPI5）
+ *   SCK  = PG13  (AF5)
+ *   MISO = PG12  (AF5)
+ *   MOSI = PG14  (AF5)
+ *   IO2  = PG10  (AF5)   Quad 使用
+ *   IO3  = PG11  (AF5)   Quad 使用
+ *   CS   = PI8   (GPIO 推挽)
+ * ========================================================================== */
+#define BSP_SPI_FLASH_PERIPH      SPI5
+#define BSP_SPI_FLASH_RCU         RCU_SPI5
+#define BSP_SPI_FLASH_APB_HZ      BSP_APB2_CLOCK_HZ
+
+#define BSP_SPI_FLASH_GPIO_RCU    RCU_GPIOG
+#define BSP_SPI_FLASH_GPIO_PORT   GPIOG
+#define BSP_SPI_FLASH_GPIO_AF     GPIO_AF_5
+
+#define BSP_SPI_FLASH_SCK_PIN     GPIO_PIN_13
+#define BSP_SPI_FLASH_MISO_PIN    GPIO_PIN_12
+#define BSP_SPI_FLASH_MOSI_PIN    GPIO_PIN_14
+#define BSP_SPI_FLASH_IO2_PIN     GPIO_PIN_10
+#define BSP_SPI_FLASH_IO3_PIN     GPIO_PIN_11
+
+#define BSP_SPI_FLASH_SINGLE_PINS (BSP_SPI_FLASH_SCK_PIN  | BSP_SPI_FLASH_MISO_PIN | BSP_SPI_FLASH_MOSI_PIN)
+#define BSP_SPI_FLASH_QUAD_PINS   (BSP_SPI_FLASH_SINGLE_PINS | BSP_SPI_FLASH_IO2_PIN | BSP_SPI_FLASH_IO3_PIN)
+
+#define BSP_SPI_FLASH_CS_RCU      RCU_GPIOI
+#define BSP_SPI_FLASH_CS_PORT     GPIOI
+#define BSP_SPI_FLASH_CS_PIN      GPIO_PIN_8
+
+#define BSP_SPI_FLASH_PRESCALE    SPI_PSC_8                 /* 120MHz / 8 = 15MHz */
+#define BSP_SPI_FLASH_CLK_HZ      (BSP_SPI_FLASH_APB_HZ / 8U)
+
+/* ============================================================================
+ * I2S 音频（I2S1 = SPI1）
+ *   MCK = PA6  (AF6)
+ *   BCK = PI1  (AF5)
+ *   WS  = PI0  (AF5)
+ *   SD  = PC1  (AF7)
+ * ========================================================================== */
+#define BSP_I2S_AUDIO_PERIPH       SPI1
+#define BSP_I2S_AUDIO_RCU          RCU_SPI1
+#define BSP_I2S_AUDIO_IRQn         SPI1_IRQn
+
+#define BSP_I2S_MCK_RCU            RCU_GPIOA
+#define BSP_I2S_MCK_PORT           GPIOA
+#define BSP_I2S_MCK_PIN            GPIO_PIN_6
+#define BSP_I2S_MCK_AF             GPIO_AF_6
+
+#define BSP_I2S_CKWS_RCU           RCU_GPIOI
+#define BSP_I2S_CKWS_PORT          GPIOI
+#define BSP_I2S_CK_PIN             GPIO_PIN_1
+#define BSP_I2S_WS_PIN             GPIO_PIN_0
+#define BSP_I2S_CKWS_AF            GPIO_AF_5
+#define BSP_I2S_CKWS_PINS          (BSP_I2S_CK_PIN | BSP_I2S_WS_PIN)
+
+#define BSP_I2S_SD_RCU             RCU_GPIOC
+#define BSP_I2S_SD_PORT            GPIOC
+#define BSP_I2S_SD_PIN             GPIO_PIN_1
+#define BSP_I2S_SD_AF              GPIO_AF_7
+
 #endif

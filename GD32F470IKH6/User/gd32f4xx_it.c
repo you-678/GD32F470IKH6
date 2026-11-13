@@ -172,3 +172,8 @@ void EXTI10_15_IRQHandler(void)
     bsp_key_irq_handler(EXTI_13);
     bsp_key_irq_handler(EXTI_14);
 }
+
+void SPI1_IRQHandler(void)
+{
+    bsp_i2s_irq_handler(BSP_I2S_BUS_AUDIO);
+}
