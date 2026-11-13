@@ -2,7 +2,7 @@
 
 基于 **GD32470I-EVAL 评估板（主控 GD32F470IKH6，Cortex-M4）** 的 Keil MDK-ARM 单工程，把官方分散的入门 Demo 抽成 `BSP / App / User` 分层，并引入 `Components/drivers` 组件层与 `bsp_pin_def.h` 集中引脚定义，方便在一个工程里切换、对比 GPIO 轮询与中断、串口轮询与中断/DMA、单/双 ADC 同步、DAC 输出、I2C/SPI 读写、EXMC 外扩 SDRAM/NAND、I2S 音频播放等写法。**换板子只改 `bsp_pin_def.h` 一个文件即可**。
 
-> **当前状态（以 `main.c` 为准，commit `584d883` 之后）**：工程默认运行的是 **「GD32F470 Full Test」综合自检**——上电初始化 USART0 打印进度、点亮三颗 LED，先跑**阶段 1 按键轮询测试（5 秒，按 PA0/PC13/PB14 翻转对应 LED）**，再跑**阶段 2 EXMC 存储测试**（`drv_storage_run()` 依次测 SDRAM → SDRAM 休眠 → NAND，每项约 1 秒），打印 `ALL TESTS COMPLETED SUCCESSFULLY!` 后切到**按键 EXTI 中断模式**进入空闲死循环（此后按任意键翻转对应 LED）。LED / KEY / USART / ADC / DAC / I2C / SPI / I2S / EXMC 的例程函数都在源码里，需按第 4.2 节手动改 `main.c` 才能跑其他例程。本 README 描述当前仓库已提交的工作区版本。
+> **当前状态（以 `User/main.c` 为准，commit `ecf9270` 及之后）**：工程默认 `main.c` 是一个 **全外设串联自检 Harness**——顶部用 `RUN_01_LED` / `RUN_03_KEY` / `RUN_06_USART` / `RUN_09_ADC` / `RUN_10_DAC` / `RUN_12_SPI` / `RUN_13_I2S` / `RUN_EXMC` 八个编译开关选择要跑的例程，`AUTO_RUN_ALL=1` 时各例程跑固定时长后自动进入下一个（不卡死在 `while(1)`）。上电后**依次**跑：① LED 全功能 → ② 按键（轮询 15s + EXTI）→ ③ 串口（Printf 心跳 + IRQ 回显 + DMA 回显）→ ④ ADC（内部温度/Vref/Vbat + 双 ADC DMA 跟随/并行）→ ⑤ DAC 阶梯波 → ⑥ SPI Flash（硬件/软件双模 Quad 读写比对）→ ⑦ I2S（硬件/软件双模播放 WAV）→ ⑧ EXMC 存储（SDRAM / 深睡唤醒 / NAND），最后打印 `ALL TESTS COMPLETED SUCCESSFULLY!`。详细串口日志见第 5.2 节。本 README 描述当前已提交的工作区版本。
 
 > **文档基准（2026-11-13）**：本文行为描述逐条对照当前工作区源码与工程配置核实，依据为 `User/main.c`、`User/bsp_pin_def.h`、`App/*.c`、`BSP/*.c/.h`、`Components/drivers/*.c/.h`、中断文件 `User/gd32f4xx_it.c`、`User/gd32f4xx_libopt.h`、`Project/F470IKH6_demo.uvprojx`。凡「只是函数、未被默认 main 调用」的能力都在第 2、7 节显式标注，**不计入默认功能**；复核方法见第 8 节。
 
@@ -29,20 +29,20 @@
 
 | 模块 | 真实实现 | 关键文件 | 状态 |
 | --- | --- | --- | --- |
-| LED BSP+App | 3 路 GPIO 输出：LED1=PE2、LED2=PE3、LED3=PF10（置高点亮、置低熄灭，推挽 50MHz）；`init/on/off/toggle`，`app_led_all_on/off/toggle()`、`app_led_flash(n)`（亮 500ms→灭 500ms，循环 n 次）、`app_led_flow_task()`（LED1→LED2→LED3 各亮 1 秒，阻塞约 3 秒） | `BSP/bsp_led.c/.h`、`App/app_led.c` | 可用（默认 main 用作状态指示） |
-| KEY BSP+App | 3 按键：Wakeup=PA0、Tamper=PC13、User=PB14；`KEY_MODE_GPIO` 输入轮询 / `KEY_MODE_EXTI` 中断；支持**注册回调** `bsp_key_register_callback()`；新增 `bsp_key_set_trigger()` 可切换触发方式，**默认 `KEY_TRIG_FALLING_PULLUP`（上拉、按下为低、下降沿触发 → 按下即回调）** | `BSP/bsp_key.c/.h`、`App/app_key.c` | 可用（**默认 main 阶段 1 轮询、阶段 2 切 EXTI 中断**） |
-| USART0 BSP+App | PA9(TX)/PA10(RX) AF7，8/1/无校验/无流控，波特率参数传入；`fputc` 重定向 `printf`；`PRINTF` / `IRQ` 两模式；`bsp_usart_set_baudrate()`（运行中改波特率）、`bsp_usart_send_dma()`（DMA 发送）、`bsp_usart_get_rx_data()`（取接收缓冲）；256 字节接收缓冲在 `bsp_usart.c` 内 | `BSP/bsp_usart.c/.h`、`App/app_usart.c` | PRINTF 可用（**默认 main 用其打印进度**）；IRQ 回显可用（需切到 IRQ 模式调用 `app_usart_task()`） |
-| ADC BSP+App | `bsp_adc_init(mode)` 三模式：**内部通道**（CH16 温度/CH17 Vref/CH18 Vbat，软件触发）、**双 ADC 跟随 DMA**（CH13=PC3/CH15=PC5，TIMER1 硬件触发，DMA1_CH0 搬运）、**双 ADC 并行 DMA**（同上通道，并行同步）；提供 `trigger()` 与读内部 `idata0/1/2`、DMA `data0/1` 的接口 | `BSP/bsp_adc.c/.h`、`App/app_adc.c` | 可用（默认 main 未调用） |
-| DAC BSP+App | PA4，12 位右对齐；`bsp_dac_init()`（关触发、关波形、使能输出缓冲、初始 0V）、`bsp_dac_set_value()`（0~4095 → 0~VDDA）；`app_dac_scan_task()` 每 100ms 阶梯 +100（约 +0.08V），到顶转降、到底转升，非阻塞需循环调用 | `BSP/bsp_dac.c/.h`、`App/app_dac.c` | 可用（默认 main 未调用） |
+| LED BSP+App | 3 路 GPIO 输出：LED1=PE2、LED2=PE3、LED3=PF10（置高点亮、置低熄灭，推挽 50MHz）；`init/on/off/toggle`，`app_led_all_on/off/toggle()`、`app_led_flash(n)`（亮 500ms→灭 500ms，循环 n 次）、`app_led_flow_task()`（LED1→LED2→LED3 各亮 1 秒，阻塞约 3 秒） | `BSP/bsp_led.c/.h`、`App/app_led.c` | 可用（**默认 main Test_01_LED 调用**） |
+| KEY BSP+App | 3 按键：Wakeup=PA0、Tamper=PC13、User=PB14；`KEY_MODE_GPIO` 输入轮询 / `KEY_MODE_EXTI` 中断；支持**注册回调** `bsp_key_register_callback()`；新增 `bsp_key_set_trigger()` 可切换触发方式，**默认 `KEY_TRIG_FALLING_PULLUP`（上拉、按下为低、下降沿触发 → 按下即回调）** | `BSP/bsp_key.c/.h`、`App/app_key.c` | 可用（**默认 main Test_03_KEY 轮询 + EXTI 中断**） |
+| USART0 BSP+App | PA9(TX)/PA10(RX) AF7，8/1/无校验/无流控，波特率参数传入；`fputc` 重定向 `printf`；`PRINTF` / `IRQ` 两模式；`bsp_usart_set_baudrate()`（运行中改波特率）、`bsp_usart_send_dma()`（DMA 发送）、`bsp_usart_get_rx_data()`（取接收缓冲）；256 字节接收缓冲在 `bsp_usart.c` 内 | `BSP/bsp_usart.c/.h`、`App/app_usart.c` | PRINTF + IRQ/DMA 回显均可用（**默认 main 全程打印 + Test_06_USART 跑 IRQ 回显与 DMA 回显**） |
+| ADC BSP+App | `bsp_adc_init(mode)` 三模式：**内部通道**（CH16 温度/CH17 Vref/CH18 Vbat，软件触发）、**双 ADC 跟随 DMA**（CH13=PC3/CH15=PC5，TIMER1 硬件触发，DMA1_CH0 搬运）、**双 ADC 并行 DMA**（同上通道，并行同步）；提供 `trigger()` 与读内部 `idata0/1/2`、DMA `data0/1` 的接口 | `BSP/bsp_adc.c/.h`、`App/app_adc.c` | 可用（**默认 main Test_09_ADC 调用**） |
+| DAC BSP+App | PA4，12 位右对齐；`bsp_dac_init()`（关触发、关波形、使能输出缓冲、初始 0V）、`bsp_dac_set_value()`（0~4095 → 0~VDDA）；`app_dac_scan_task()` 每 100ms 阶梯 +100（约 +0.08V），到顶转降、到底转升，非阻塞需循环调用 | `BSP/bsp_dac.c/.h`、`App/app_dac.c` | 可用（**默认 main Test_10_DAC 调用**） |
 | I2C BSP | I2C0（SCL=PB6 / SDA=PB7，AF4，100kHz，开漏上拉）；**硬件 I2C**（`bsp_i2c_init(BSP_I2C_MODE_HW)`）+ **软件 I2C**（GPIO 模拟时序，两套都带超时与 `printf` 报错）对外统一接口 `bsp_i2c_write_bytes()` / `bsp_i2c_read_bytes()` / `bsp_i2c_wait_standby()` | `BSP/bsp_i2c.c/.h` | 可用（默认 main 未调用） |
 | AT24C02 组件驱动 | 芯片无关驱动：探测在线 `at24c02_init()`、单字节读写、按页写 `at24c02_write_buffer()`（内部自动分页）、连续读 `at24c02_read_buffer()`、整片写读一致性 `at24c02_test()`（256 字节全测） | `Components/drivers/drv_at24c02.c/.h` | 可用（被 `app_i2c_eeprom` 调用） |
 | I2C-EEPROM App | `app_i2c_eeprom_init(mode)`：初始化 LED（灭）、初始化 I2C、探测 AT24C02、跑一致性测试，通过置 `s_ok`；`app_i2c_eeprom_task()`：通过则三灯循环单闪，失败则三灯常亮 | `App/app_i2c_eeprom.c` | 可用（默认 main 未调用，可手动切） |
-| EXMC BSP | 外部存储器控制器：**SDRAM**（32MB @ `0xC0000000`，含 `bsp_sdram_write/read`、`bsp_sdram_enter/exit_self_refresh`）+ **NAND**（@ `0x70000000`，含 `bsp_nand_read_id/write/read/erase_block/reset`）；`bsp_exmc_init_mode()` 按模式初始化，`bsp_exmc_restore_clock()` 恢复时钟 | `BSP/bsp_exmc.c/.h` | 可用（**默认 main 阶段 2 通过 `drv_storage_run()` 调用**） |
-| Storage 组件驱动 | `drv_storage_run(mode)` 统一跑存储模式：`STORAGE_MODE_SDRAM` / `STORAGE_MODE_SDRAM_SLEEP` / `STORAGE_MODE_NAND`；`drv_storage_mode_name()` 返回模式名 | `Components/drivers/drv_storage.c/.h` | 可用（**默认 main 阶段 2 调用**） |
-| SPI BSP | `BSP_SPI_BUS_FLASH`（SPI5，PG13/12/14/10/11 + CS PI8，AF5，预分频 PSC_8 → 15MHz）、`BSP_SPI_BUS_LCD`；**硬件 SPI**（`bsp_spi_init_mode(HW)`）+ **软件 SPI**（GPIO 模拟）；统一 `bsp_spi_transfer/_buf`、`bsp_spi_cs_low/high`、Quad 模式 `bsp_spi_quad_enter_read/write/exit` | `BSP/bsp_spi.c/.h` | 可用（默认 main 未调用） |
-| GD25Qxx Flash 组件驱动 | 芯片无关 SPI Flash 驱动：`gd25qxx_bind/probe/read_id`、状态读写、`write_enable`、`wait_busy`、扇区/块/整片擦除、页读写、`gd25qxx_quad_enable/read/write`（Quad 模式） | `Components/drivers/drv_gd25qxx.c/.h` | 可用（默认 main 未调用，可手动切） |
-| I2S BSP | `BSP_I2S_BUS_AUDIO`（I2S1=SPI1：MCK=PA6 AF6、BCK=PI1 AF5、WS=PI0 AF5、SD=PC1 AF7）；**硬件 I2S**（`bsp_i2s_init_mode(HW)`）+ **软件 I2S**；`bsp_i2s_start()`（带发送回调、`num_halfwords` 采样数）、`bsp_i2s_stop()`、`bsp_i2s_is_done()`、`bsp_i2s_irq_handler()` | `BSP/bsp_i2s.c/.h` | 可用（默认 main 未调用） |
-| WAV / I2S Player 组件 | `drv_wav_parse/iter_init/iter_next` 解析与逐帧迭代 WAV；`drv_i2s_player_init/play_blocking` 通过 I2S 播放 WAV；`wave_data.c` 内含一段嵌入的测试 WAV（`wavetestdata` / `wavetestdata_len`） | `Components/drivers/drv_wav.c/.h`、`drv_i2s_player.c/.h`、`wave_data.c/.h` | 可用（默认 main 未调用，可手动切） |
+| EXMC BSP | 外部存储器控制器：**SDRAM**（32MB @ `0xC0000000`，含 `bsp_sdram_write/read`、`bsp_sdram_enter/exit_self_refresh`）+ **NAND**（@ `0x70000000`，含 `bsp_nand_read_id/write/read/erase_block/reset`）；`bsp_exmc_init_mode()` 按模式初始化，`bsp_exmc_restore_clock()` 恢复时钟 | `BSP/bsp_exmc.c/.h` | 可用（**默认 main Test_EXMC 通过 `drv_storage_run()` 调用**） |
+| Storage 组件驱动 | `drv_storage_run(mode)` 统一跑存储模式：`STORAGE_MODE_SDRAM` / `STORAGE_MODE_SDRAM_SLEEP` / `STORAGE_MODE_NAND`；`drv_storage_mode_name()` 返回模式名 | `Components/drivers/drv_storage.c/.h` | 可用（**默认 main Test_EXMC 调用**） |
+| SPI BSP | `BSP_SPI_BUS_FLASH`（SPI5，PG13/12/14/10/11 + CS PI8，AF5，预分频 PSC_8 → 15MHz）、`BSP_SPI_BUS_LCD`；**硬件 SPI**（`bsp_spi_init_mode(HW)`）+ **软件 SPI**（GPIO 模拟）；统一 `bsp_spi_transfer/_buf`、`bsp_spi_cs_low/high`、Quad 模式 `bsp_spi_quad_enter_read/write/exit` | `BSP/bsp_spi.c/.h` | 可用（**默认 main Test_12_SPI 调用**） |
+| GD25Qxx Flash 组件驱动 | 芯片无关 SPI Flash 驱动：`gd25qxx_bind/probe/read_id`、状态读写、`write_enable`、`wait_busy`、扇区/块/整片擦除、页读写、`gd25qxx_quad_enable/read/write`（Quad 模式） | `Components/drivers/drv_gd25qxx.c/.h` | 可用（**默认 main Test_12_SPI 调用**） |
+| I2S BSP | `BSP_I2S_BUS_AUDIO`（I2S1=SPI1：MCK=PA6 AF6、BCK=PI1 AF5、WS=PI0 AF5、SD=PC1 AF7）；**硬件 I2S**（`bsp_i2s_init_mode(HW)`）+ **软件 I2S**；`bsp_i2s_start()`（带发送回调、`num_halfwords` 采样数）、`bsp_i2s_stop()`、`bsp_i2s_is_done()`、`bsp_i2s_irq_handler()` | `BSP/bsp_i2s.c/.h` | 可用（**默认 main Test_13_I2S 调用**） |
+| WAV / I2S Player 组件 | `drv_wav_parse/iter_init/iter_next` 解析与逐帧迭代 WAV；`drv_i2s_player_init/play_blocking` 通过 I2S 播放 WAV；`wave_data.c` 内含一段嵌入的测试 WAV（`wavetestdata` / `wavetestdata_len`） | `Components/drivers/drv_wav.c/.h`、`drv_i2s_player.c/.h`、`wave_data.c/.h` | 可用（**默认 main Test_13_I2S 调用**） |
 | 系统 / 中断 | `systick_config()` 配 1kHz SysTick → `delay_1ms()`；`EXTI0`/`EXTI10_15` 中断服务调用 `bsp_key_irq_handler()` 分发按键；`USART0_IRQHandler` 下沉到 `BSP/bsp_usart.c`；`SPI1_IRQHandler` 下沉到 `BSP/bsp_i2s.c` | `User/systick.c`、`User/gd32f4xx_it.c`、`BSP/bsp_usart.c`、`BSP/bsp_i2s.c` | 可用 |
 | 官方固件 | CMSIS（startup + `system_gd32f4xx.c`，25MHz HXTAL 经 PLL 配 200MHz 系统时钟）+ 整套 GD32F4xx 标准外设库（27 个 `.c`），全部加入工程编译 | `Firmware/CMSIS/`、`Firmware/GD32F4xx_standard_peripheral/` | 可用 |
 | 引脚集中定义 | 所有 LED/KEY/USART/ADC/DAC/I2C/SPI/I2S/EXMC 的 GPIO 端口、引脚、时钟、AF、外设、中断号宏统一在此 | `User/bsp_pin_def.h` | 可用 |
@@ -113,8 +113,8 @@ cd GD32F470IKH6
 | --- | --- |
 | `#error "Please select the target GD32F4xx device in gd32f4xx.h file"` | `Firmware/CMSIS/GD/GD32F4xx/Include/gd32f4xx.h` 里的器件宏是注释状态，本机由 DFP 环境注入；换环境后报此错，在 `Options for Target → C/C++ (AC6) → Define` 添加 `GD32F470` |
 | 串口无输出 | 依次查：JP5 是否短接 1-2、串口线是否接 COM0、终端是否 115200-8-N-1、是否误把 RS232 口接到 USB-TTL；默认 `main.c` 上电即有串口打印（见第 5 节），与按键无关 |
-| 默认例程阶段 1 按键无效 | 确认按键为上拉接法（默认 `KEY_TRIG_FALLING_PULLUP`，按下为低电平触发）；若改过 `bsp_key_set_trigger()` 为 `RISING_FLOATING`，则需改成按下接 3.3V |
-| 默认例程阶段 2 存储测试报错 | GD32470I-EVAL 板载 SDRAM/NAND 正常时通过；若在其它板卡或 SDRAM/NAND 未焊接，存储读写会失败（打印错误后继续），属预期 |
+| 默认例程按键（轮询阶段）无效 | 确认按键为上拉接法（默认 `KEY_TRIG_FALLING_PULLUP`，按下为低电平触发）；若改过 `bsp_key_set_trigger()` 为 `RISING_FLOATING`，则需改成按下接 3.3V |
+| 默认例程 EXMC 存储测试报错 | GD32470I-EVAL 板载 SDRAM/NAND 正常时通过；若在其它板卡或 SDRAM/NAND 未焊接，存储读写会失败（打印错误后继续），属预期 |
 | 温度/电压打印为 `0.000` | 仅当改用 **Microlib** 时才需要；请在 `Options for Target → C/C++ (AC6)` 勾选「Use float with printf」再编译。本工程用 ARMCLANG 标准库（非 Microlib），`%f` 默认可用 |
 | 双 ADC 模式读数恒为 0 / 乱跳 | 内部通道模式无需接线；双 ADC 模式需 PC3、PC5 接真实模拟信号，悬空会读到噪声 |
 | DAC 输出电压不变 | 切换例程未把 PA4 接到测量端；`app_dac_scan_task()` 需在主循环不断调用（每次含 10ms 延时）才产生阶梯波 |
@@ -127,75 +127,46 @@ cd GD32F470IKH6
 
 ## 4. 使用方法
 
-### 4.1 跑通默认例程（GD32F470 Full Test：按键轮询 → EXMC 存储 → EXTI 中断）
+### 4.1 跑通默认例程（全外设串联自检 Harness）
+
+默认 `User/main.c` 是一个「一键全测」自检程序：顶部用 `RUN_xx` 编译开关选择要跑的外设，`AUTO_RUN_ALL=1` 时各例程跑固定时长后自动进入下一个。上电后串口（115200-8-N-1）会**依次**打印各模块自检结果。
 
 1. JP5 短接 1-2，串口线接 COM0，打开串口助手：**115200 / 8 数据位 / 1 停止位 / 无校验 / 无流控**。
-2. 使用 GD32470I-EVAL 板（板载 SDRAM + NAND）；接好 5V 供电。
+2. 使用 GD32470I-EVAL 板（板载 SDRAM + NAND + SPI Flash GD25Qxx）；接好 5V 供电；I2S 外接 DAC/功放可听测试音。
 3. 编译（F7）→ 下载（F8）→ 复位。
-4. 上电观察串口与板载 LED：
-   - 先打印 `GD32F470 Full Test Boot` 横幅，三灯点亮；
-   - **阶段 1（约 5 秒）**：打印 `[STAGE 1] POLLING TEST`，期间**按 PA0/PC13/PB14 任一键，对应 LED1/LED2/LED3 翻转**并打印 `Pressed`；
-   - **阶段 2（约 3 秒）**：打印 `[STAGE 2] EXMC STORAGE TEST`，依次跑 SDRAM → SDRAM 休眠 → NAND（每项约 1 秒），打印各模式结果；
-   - 打印 `ALL TESTS COMPLETED SUCCESSFULLY!` 后进入 EXTI 中断模式，**此后按任意键翻转对应 LED**，主循环空闲。
+4. 上电观察串口与板载 LED，默认 Harness 依次跑（完整日志见第 5.2 节）：
+   - **① LED 全功能**：亮/灭/翻转、全亮、全灭、闪烁、流水。
+   - **② 按键**：阶段 1 轮询 15 秒（按 PA0/PC13/PB14 翻转对应 LED 并打印 `Pressed`）；阶段 2 切 EXTI 中断。
+   - **③ 串口**：Printf 心跳 → IRQ 回显（发字符串回显 `[IRQ RX] Got: ...`）→ DMA 回显。
+   - **④ ADC**：内部通道打印 `Temp / Vref / Vbat`；双 ADC DMA 跟随 / 并行打印 `Raw Data0/1`。
+   - **⑤ DAC**：PA4 输出 0V → 3.3V → 0V 阶梯波。
+   - **⑥ SPI Flash**：硬件 / 软件 SPI 双模探测 GD25Qxx、Quad 擦/写/读 512 字节比对（`HARDWARE/SOFTWARE SPI : PASS`）。
+   - **⑦ I2S**：硬件 / 软件 I2S 双模播放 `wavetestdata`（`rate=8000 ch=1 bits=16`，`[HW]/[SW] PASS`）。
+   - **⑧ EXMC 存储**：SDRAM 读写 → SDRAM 深睡唤醒（按 PA0 唤醒，`Woke up! Clock restored.`）→ NAND 读 ID 与读写（`NAND ID: 0xC8 0xF1 0x80 0x1D`）。
+   - 最后打印 `ALL TESTS COMPLETED SUCCESSFULLY!`，进入空闲循环（仍可按键翻转 LED）。
 
-### 4.2 切换例程
+### 4.2 切换 / 精简例程
 
-把下面片段替换 `User/main.c` 的 `main()` 主体即可（需要的外设 `init` 已写在片段里）。`App/`、`BSP/`、`Components/` 的 `.c` 无需增删。改完重新 Build + Download。
+默认 `main.c` 用**编译期开关**控制跑哪些测试，位于 `User/main.c` 顶部：
 
 ```c
-#include "gd32f4xx.h"
-#include "gd32f4xx_it.h"
-#include "main.h"
-
-int main(void) {
-    systick_config();
-    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-
-    bsp_led_init(LED1); bsp_led_init(LED2); bsp_led_init(LED3);
-
-    /* ① 流水灯：初始化三颗 LED，循环跑流水 */
-    // while(1) { app_led_flow_task(); }
-
-    /* ② 按键轮询：初始化三键为轮询模式，循环调用轮询任务 */
-    // app_key_init_polling();
-    // while(1) { app_key_polling_task(); }
-
-    /* ③ 按键中断：初始化三键为中断模式并注册回调，主循环留空 */
-    // app_key_init_exti();
-    // while(1) { }
-
-    /* ④ 串口 IRQ 回显 + 命令：初始化为 IRQ 模式，循环调用 USART 任务 */
-    // bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_IRQ, 115200U);
-    // while(1) { app_usart_task(); }
-
-    /* ⑤ ADC 三模式自动测试 */
-    // bsp_adc_init(BSP_ADC_MODE_INTERNAL);
-    // while(1) { /* 见 Doc/readme.txt 09 例程：内部/跟随DMA/并行DMA 三段循环 */ }
-
-    /* ⑥ DAC 阶梯波：初始化 DAC，循环扫描 */
-    // bsp_dac_init();
-    // while(1) { app_dac_scan_task(); delay_1ms(10); }
-
-    /* ⑦ I2C-EEPROM（硬件/软件 I2C 可选） */
-    // app_i2c_eeprom_init(BSP_I2C_MODE_HW);
-    // while(1) { app_i2c_eeprom_task(); }
-
-    /* ⑧ SPI Flash（GD25Qxx）测试 */
-    // /* 见 Doc/readme.txt 中 GD25Qxx 双模自检片段 */
-
-    /* ⑨ I2S 音频播放（WAV 测试数据） */
-    // /* 见 Doc/readme.txt 中 I2S Player 自检片段 */
-
-    /* ⑩ 默认 Full Test（取消下面注释即恢复出厂默认例程） */
-    app_key_init_polling();
-    for (uint32_t i = 0; i < 5000; i++) { app_key_polling_task(); delay_1ms(1); }
-    for (int m = 0; m < STORAGE_MODE_MAX; m++) { drv_storage_run((storage_mode_t)m); delay_1ms(1000); }
-    app_key_init_exti();
-    while (1) { delay_1ms(1000); }
-}
+/* main.c 顶部 */
+#define AUTO_RUN_ALL  1   // 1=各例程跑固定时长后自动进下一个；0=每个例程停在 while(1)
+#define RUN_01_LED    1
+#define RUN_03_KEY    1
+#define RUN_06_USART  1
+#define RUN_09_ADC    1
+#define RUN_10_DAC    1
+#define RUN_12_SPI    1
+#define RUN_13_I2S    1
+#define RUN_EXMC      1
 ```
 
-更多完整 `main()` 示例（含 01 流水灯、03 EXTI、06 USART、09 ADC、10 DAC、GD25Qxx Flash、I2S Player、默认 Full Test）见 `Doc/readme.txt`。
+- **只跑某一个（方便单点调试）**：把 `AUTO_RUN_ALL` 设 `0`，并只留一个 `RUN_xx=1`、其余改 `0`，重新 Build + Download；此时该例程会停在 `while(1)` 不死机，便于单独观察。
+- **完全自定义**：直接把 `main()` 主体换成 `Doc/readme.txt` 第三章里的任一示例（01 流水灯 / 03 EXTI / 06 USART / 09 ADC / 10 DAC / 12 SPI Flash / 13 I2S Player 均有完整 `main()`）。
+- **重新加入 I2C-EEPROM 测试**：默认 Harness 不含 I2C（无 `RUN_I2C` 开关），按上面「完全自定义」方式在 `main()` 里调用 `app_i2c_eeprom_init()` / `app_i2c_eeprom_task()` 即可。
+
+更多完整 `main()` 示例（01/03/06/09/10/12/13 及默认 Harness）见 `Doc/readme.txt` 第三章。
 
 ### 4.3 串口两种模式的真实状态
 
@@ -317,24 +288,108 @@ void systick_config(void);     void delay_1ms(uint32_t ms);
 | （切换例程后）PC3 / PC5 模拟信号 | 电压 | 双 ADC 模式由 TIMER1 触发采样，DMA 搬运 |
 | （切换例程后）PA4 测量端 | 万用表/示波器 | DAC 阶梯波输出 |
 | （切换例程后）SPI Flash / I2S 外设 | 硬件 | 见 `Doc/readme.txt` 对应自检片段 |
-| 板载 SDRAM / NAND | 外部存储 | 默认例程阶段 2 由 `drv_storage_run()` 读写验证 |
+| 板载 SDRAM / NAND | 外部存储 | 默认例程（第 ⑧ 项 EXMC 存储）由 `drv_storage_run()` 读写验证 |
 
-### 5.2 输出
+### 5.2 输出（默认 `main.c` 全外设串联自检串口日志，GD32470I-EVAL 板）
 
-**① 默认 `main.c` 上电后串口（综合自检，GD32470I-EVAL 板）**
+> 下面是 `AUTO_RUN_ALL=1`、八个 `RUN_xx` 全开时的**真实串口输出节选**（重复行用 `…` 省略）。温度/电压为片内采样值，会随芯片与板卡浮动；SPI Flash ID 依焊接型号而定（示例为 GD25Q128 `0xC8 0x40 0x17`）。
 
 ```
 ========================================
-GD32F470 Full Test Boot
+LED Ultimate Test Starts
 ========================================
+[BSP Test 1] bsp_led_init (Init 3 LEDs)
+...
+[APP Test 5] app_led_flow_task (Run flow once)
+All LED functions tested OK! Enter while(1).
 
-[STAGE 1] POLLING TEST (5 seconds)...
-Press PA0/PC13/PB14 to toggle LEDs.
+========================================
+STAGE 1: ALL POLLING MODE (15 seconds)
+Press PA0, PC13, PB14 to test Polling.
+========================================
 [Polling] PA0 Pressed! LED1 Toggle.
 [Polling] PC13 Pressed! LED2 Toggle.
+...
+========================================
+STAGE 2: ALL EXTI MODE (Infinite loop)
+Press PA0, PC13, PB14 to test EXTI.
+========================================
 
-[STAGE 2] EXMC STORAGE TEST...
-（依次打印 SDRAM / SDRAM Sleep / NAND 各模式测试结果）
+========================================
+STAGE 1: Printf Test Started (5 seconds)
+[Printf] Heartbeat 0
+[Printf] Heartbeat 1
+...
+[Printf] Heartbeat 49
+========================================
+STAGE 2: IRQ RX & Printf Echo (10 seconds)
+Please send some data to test IRQ.
+[IRQ RX] Got: hello
+[IRQ RX] Got: UOQDVUJS
+[IRQ RX] Got: KAUFPIXABZKWWWUAZTGPZUDFULGWNYUFZIHTPZQPKZBBSXXRVGCAYCMPERYMORNTKKDV
+...
+========================================
+STAGE 3: IRQ RX & DMA Echo (Infinite loop)
+Please send some data to test DMA echo.
+...
+
+========================================
+STAGE 1: INTERNAL ADC (10s)
+========================================
+[INTERNAL] Temp: 25 C, Vref: 1.217 V, Vbat: 3.323 V
+[INTERNAL] Temp: 24 C, Vref: 1.216 V, Vbat: 3.320 V
+...
+========================================
+STAGE 2: DUAL ADC FOLLOW UP MODE (10s)
+========================================
+[DUAL DMA] Raw Data0: 0x1A2B3C4D, Data1: 0x5E6F7A8B
+...
+========================================
+STAGE 3: DUAL ADC PARALLEL MODE (10s)
+========================================
+[DUAL DMA] Raw Data0: 0x1A2B3C4D, Data1: 0x5E6F7A8B
+...
+All ADC Modes Tested OK!
+
+========================================
+DAC PA4 Scan Test Started!
+Outputting 0V -> 3.3V -> 0V continuously.
+Measure PA4 with a multimeter to see the change.
+========================================
+
+===== GD25Qxx dual-mode self test =====
+========== HARDWARE SPI test ==========
+[HARDWARE] id=0x00C84017, cap=2048KB, quad=yes
+[HARDWARE] PASSED
+========== SOFTWARE SPI test ==========
+[SOFTWARE] id=0x00C84017, cap=2048KB, quad=no
+[SOFTWARE] PASSED
+===== RESULT =====
+  HARDWARE SPI : PASS
+  SOFTWARE SPI : PASS
+
+===== I2S Player Self Test =====
+WAV: 16044 bytes
+---- HARDWARE I2S ----
+[HW] rate=8000 ch=1 bits=16 frames=8000
+[HW] PASS
+---- SOFTWARE I2S ----
+[SW] PASS
+===== ALL DONE =====
+
+---- [SDRAM] ----
+[SDRAM] PASS
+
+---- [SDRAM-SLEEP] ----
+  Enter MCU deepsleep...
+  >>> PRESS PA0 TO WAKEUP <<<
+  Woke up! Clock restored.
+  Re-init SDRAM...
+[SDRAM-SLEEP] PASS
+
+---- [NAND] ----
+  NAND ID: 0xC8 0xF1 0x80 0x1D
+[NAND] PASS
 
 ========================================
 ALL TESTS COMPLETED SUCCESSFULLY!
@@ -342,35 +397,19 @@ You can still press keys to toggle LEDs.
 ========================================
 ```
 
-> 阶段 1 约 5 秒，期间按 PA0/PC13/PB14 任一对 LED1/LED2/LED3 翻转并打印 `Pressed`；阶段 2 约 3 秒跑完三种存储模式；之后进入 EXTI 中断模式，按任意键即可翻转对应 LED。**若板载无 SDRAM/NAND 或焊接异常，存储测试会打印错误但继续**，不影响进入中断模式。
+> **关于「一句话被切成两半」**：日志里 `[IRQ RX] Got: UOQDVUJS` 与下一行 `KAUFPIXABZKWWW...` 是同一句长串被分包——电脑一口气发来 60 字节，MCU 的串口中断**一字节一字节**进、主循环 `bsp_usart_get_rx_data()` 接到 8 字节就返回打印，剩下的下一轮才读走。这是串口通讯典型的「分包/粘包」现象，**不是 Bug**；工业协议里加帧头帧尾或超时断帧即可，与底层驱动无关。
 
-**② 切换为「串口 IRQ 回显」例程后**（`app_usart_task()` 在循环中）：
+> 阶段顺序：① LED 全功能 → ② 按键轮询 15s + EXTI → ③ 串口 Printf 心跳 + IRQ 回显 + DMA 回显 → ④ ADC 内部温度/Vref/Vbat + 双 ADC DMA 跟随/并行 → ⑤ DAC 阶梯波 → ⑥ SPI Flash 硬件/软件双模 Quad 比对 → ⑦ I2S 硬件/软件双模播放 WAV → ⑧ EXMC（SDRAM / 深睡唤醒 / NAND）。**若板载无 SDRAM/NAND 或焊接异常，对应存储测试会打印错误但程序继续**，不影响进入最后的空闲循环。
 
-```
-[IRQ RX] Got: hello
-（同时 DMA 把 "hello" 原样发回串口助手）
-
-Changing baudrate to 9600...
-[Success] Baudrate is now 9600 bps.
-（发送 "BAUD9600" 后，后续通信需把终端切到 9600）
-```
-
-**③ 切换为「按键 EXTI 中断」例程后**：默认触发为**下降沿（按下即触发）**，按下 PA0/PC13/PB14 立即翻转 LED1/LED2/LED3 并打印 `Pressed`（注意与旧版「松手触发」不同）。
-
-**④ 切换为「DAC 阶梯波」例程后**：PA4 输出 0V → 3.3V → 0V 循环扫描，万用表/示波器可见阶梯上升与下降。
-
-**⑤ 切换为「GD25Qxx SPI Flash」例程后**：依次以硬件 SPI / 软件 SPI 探测 Flash、擦扇区、Quad 写读 512 字节比对，打印 `HARDWARE SPI : PASS` / `SOFTWARE SPI : PASS`。
-
-**⑥ 切换为「I2S 音频播放」例程后**：以硬件 / 软件 I2S 播放 `wavetestdata` 测试音，打印采样率/通道/位数与 `PASS`。
-
-### 5.3 现象对照速查（默认 `main.c` = GD32F470 Full Test）
+### 5.3 现象对照速查（默认 `main.c` = 全外设串联自检 Harness）
 
 | 操作 | 预期 LED | 预期串口 |
 | --- | --- | --- |
-| 上电复位（GD32470I-EVAL） | 三灯亮 → 阶段 1 按键翻转 → 阶段 2 保持 | 打印 Boot 横幅 → 阶段 1/2 → `ALL TESTS COMPLETED SUCCESSFULLY!` |
-| 阶段 1 按 PA0/PC13/PB14 | 对应 LED 翻转 | 打印 `[Polling] <引脚> Pressed! LEDx Toggle.` |
-| 进入中断模式后按任意键 | 对应 LED 翻转 | 无打印（中断仅翻转 LED） |
-| 向串口发数据（默认 PRINTF 模式） | 无变化 | 无应答（默认 main 跑 PRINTF 模式，不接收） |
+| 上电复位（GD32470I-EVAL） | 三灯亮 → 各阶段测试 | 依次打印 ①~⑧ 各模块自检结果与 `ALL TESTS COMPLETED SUCCESSFULLY!` |
+| ② 按键阶段按 PA0/PC13/PB14 | 对应 LED 翻转 | 打印 `[Polling] <引脚> Pressed! LEDx Toggle.` |
+| ③ 串口 IRQ 阶段向串口发数据 | LED1 闪一下 | 回显 `[IRQ RX] Got: <原串>`（DMA 原样发回） |
+| ⑧ EXMC 深睡阶段按 PA0 | LED2 亮（唤醒指示） | 打印 `Woke up! Clock restored.` |
+| 全部跑完后向串口发数据 | 无变化 | 无应答（最终 EXMC 测试后串口回到 PRINTF 模式，不接收） |
 
 ---
 
@@ -403,8 +442,8 @@ GD32F470IKH6/                        # 仓库根目录
 
 ## 7. 当前状态与已知限制
 
-- 默认 `main.c` 跑 **「GD32F470 Full Test」**：阶段 1 `app_key_init_polling()` + 轮询循环（约 5s）；阶段 2 循环 `drv_storage_run()` 三种模式（SDRAM / SDRAM 休眠 / NAND，每项约 1s）；最后 `app_key_init_exti()` 进入 EXTI 中断空闲。`app_led_*`、`app_usart_task()`、`app_adc_*`、`app_dac_scan_task()`、`app_i2c_eeprom_*`、`bsp_spi_*`/`drv_gd25qxx_*`、`bsp_i2s_*`/`drv_i2s_player_*` 都不在默认 `main.c` 里，需按第 4.2 节手动改 `main.c`。
-- 默认例程依赖板载 **SDRAM / NAND**（GD32470I-EVAL 自带）；在其它板卡或存储未焊接时，阶段 2 会报错但程序仍进入中断模式，属预期。
+- 默认 `main.c` 是**全外设串联自检 Harness**（`AUTO_RUN_ALL=1` 时各例程跑固定时长后进入下一个）：依次 `Test_01_LED` → `Test_03_KEY`（轮询 15s + EXTI）→ `Test_06_USART`（Printf 心跳 + IRQ 回显 + DMA 回显）→ `Test_09_ADC`（内部通道 + 双 ADC DMA 跟随/并行）→ `Test_10_DAC` → `Test_12_SPI`（GD25Qxx 硬件/软件双模 Quad）→ `Test_13_I2S`（WAV 硬件/软件双模）→ `Test_EXMC`（`drv_storage_run()` 三种模式），最后进入空闲循环。唯一未含在默认 Harness 里的是 `app_i2c_eeprom_*`（I2C / AT24C02），需按第 4.2 节手动开启（无 `RUN_I2C` 开关）。
+- 默认例程的 **⑧ EXMC 存储测试**依赖板载 **SDRAM / NAND**（GD32470I-EVAL 自带）；在其它板卡或存储未焊接时，对应 SDRAM / NAND 测试会报错但程序继续跑完进入空闲循环，属预期。
 - **按键触发方式已改为默认下降沿（按下即触发）**：`bsp_key.c` 默认 `s_key_trigger = KEY_TRIG_FALLING_PULLUP`（上拉、按下为低、EXTI 下降沿）。若改用 `bsp_key_set_trigger(KEY_TRIG_RISING_FLOATING)`，则需把按键改成按下接 3.3V 的浮空接法。旧版「松手（上升沿）触发」已不再默认。
 - `app_key_polling_task()` 用 `while(...==0)` 死等松手，长按会阻塞整个主循环；`app_led_flow_task()` 为阻塞延时，约 3 秒跑完一轮。
 - 双 ADC 模式需要 PC3 / PC5 接真实模拟信号；`app_adc_task_dual_dma()` 打印的是 32 位同步数据寄存器原始值，需按 GD32 手册拆分两路 ADC 的 16 位数据。
@@ -421,7 +460,7 @@ GD32F470IKH6/                        # 仓库根目录
 
 | 声明 | 依据文件 |
 | --- | --- |
-| 默认 `main.c` 行为（Full Test：按键轮询 → EXMC 存储 → EXTI 中断） | `User/main.c`、`App/app_key.c`、`Components/drivers/drv_storage.c`、`BSP/bsp_exmc.c` |
+| 默认 `main.c` 行为（全外设串联自检 Harness：LED → KEY → USART → ADC → DAC → SPI → I2S → EXMC 八项依次跑） | `User/main.c`、`App/*.c`、`Components/drivers/drv_storage.c`、`BSP/*.c` |
 | 引脚/时钟集中定义（LED/KEY/USART/ADC/DAC/I2C/SPI/I2S/EXMC） | `User/bsp_pin_def.h` |
 | 按键回调、下降沿触发、`bsp_key_set_trigger`、上升/下降沿分发 | `BSP/bsp_key.c/.h`、`App/app_key.c`、`User/gd32f4xx_it.c` |
 | USART 两模式、256 字节接收缓冲、`set_baudrate`/`send_dma`/`get_rx_data`、IRQ 回显 | `BSP/bsp_usart.c/.h`、`App/app_usart.c` |

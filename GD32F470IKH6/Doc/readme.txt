@@ -43,7 +43,7 @@ Project_Root/
  ├── 5_App/                    // [应用层] 纯业务逻辑 (完全不碰硬件)
  │    └── app_led/key/usart/adc/dac/i2c_eeprom (.c/.h)
  ├── 6_Core/                   // [核心层] 启动与中断
- │    ├── main.c               // 默认例程：GD32F470 Full Test
+ │    ├── main.c               // 默认例程：全外设串联自检 Harness（RUN_xx 开关）
  │    ├── gd32f4xx_it.c        // 所有中断服务函数入口
  │    └── systick.c            // 系统心跳
  ├── 7_Project/                // Keil 工程文件存放处 (.uvprojx 等)
@@ -109,7 +109,7 @@ Components/ OSAL/ Services/ Firmware/ Doc/ tools/ .vscode/，目录名与树中�
   23_TIMER_Breath_LED       TIMER 呼吸灯（PWM）                       [待补]
   26_TRNG_Get_Random        TRNG 硬件随机数                           [待补]
 
-注：14/15/16（EXMC）由默认 main.c 的「阶段 2 存储测试」覆盖；12/13 见
+注：14/15/16（EXMC）由默认 main.c（全外设串联自检 Harness）依次跑过；12/13 见
 第三章对应自检示例。11_I2C_EEPROM 已有 app_i2c_eeprom 组件，但尚未单独
 放在本文档的 main 示例里（可参照 README 第 4.2 节手动切换）。
 
@@ -123,9 +123,9 @@ Components/ OSAL/ Services/ Firmware/ Doc/ tools/ .vscode/，目录名与树中�
 中 1_BSP、3_Components、5_App 层对外暴露的调用函数。
 
 注：本节末尾附「当前工程默认 main.c」——即仓库实际烧录运行的
-GD32F470 Full Test（阶段 1 按键轮询 → 阶段 2 EXMC 存储测试 → EXTI 中断
-模式），与根目录 README 第 4.1 / 5.2 节描述的默认例程一致；其上的
-01 / 03 / 06 / 09 / 10 / 12 / 13 为可切换的示例例程，需替换 main.c 主体后
+全外设串联自检 Harness（LED → KEY → USART → ADC → DAC → SPI → I2S → EXMC 八项依次
+八项自检），与根目录 README 第 4.1 / 5.2 节描述的默认例程一致；其上的
+01 / 03 / 06 / 09 / 10 / 12 / 13 为各外设单独的示例例程（与 Harness 内 Test_xx 对应），可经 RUN_xx 开关或替换 main() 主体
 重新编译。
 
 ================================================================
@@ -533,55 +533,66 @@ int main(void)
 }
 
 ================================================================
-当前工程默认 main.c（GD32F470 Full Test：按键轮询 → EXMC 存储 → EXTI）
+当前工程默认 main.c（全外设串联自检 Harness：LED → KEY → USART → ADC → DAC → SPI → I2S → EXMC）
 ================================================================
+
+/* ---- main.c 顶部：编译期开关，选择要跑的例程 ---- */
+#define AUTO_RUN_ALL  1   // 1=各例程跑固定时长后自动进下一个；0=每个例程停在 while(1)
+#define RUN_01_LED    1
+#define RUN_03_KEY    1
+#define RUN_06_USART  1
+#define RUN_09_ADC    1
+#define RUN_10_DAC    1
+#define RUN_12_SPI    1
+#define RUN_13_I2S    1
+#define RUN_EXMC      1
+
+/* 全模式自动跑时，每个 Test 结尾用 TEST_END() 短暂延时后返回；
+   单测模式（AUTO_RUN_ALL=0）则停在 while(1) 便于观察 */
+#if AUTO_RUN_ALL
+    #define TEST_END()  delay_1ms(1000)
+#else
+    #define TEST_END()  while(1)
+#endif
+
+/* 各 Test_xx() 函数体（Test_01_LED / Test_03_KEY / Test_06_USART /
+   Test_09_ADC / Test_10_DAC / Test_12_SPI / Test_13_I2S / Test_EXMC）
+   均在 User/main.c 内，逻辑与上方的 01/03/06/09/10/12/13 示例一致。 */
 
 int main(void) {
     systick_config();
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-    
     bsp_led_init(LED1);
     bsp_led_init(LED2);
     bsp_led_init(LED3);
 
-    printf("\r\n========================================\r\n");
-    printf("GD32F470 Full Test Boot\r\n");
-    printf("========================================\r\n");
+    /* 按 RUN_xx 开关依次跑各外设自检，顺序固定为：
+       LED → KEY → USART → ADC → DAC → SPI → I2S → EXMC */
+#if RUN_01_LED
+    Test_01_LED();
+#endif
+#if RUN_03_KEY
+    Test_03_KEY();
+#endif
+#if RUN_06_USART
+    Test_06_USART();
+#endif
+#if RUN_09_ADC
+    Test_09_ADC();
+#endif
+#if RUN_10_DAC
+    Test_10_DAC();
+#endif
+#if RUN_12_SPI
+    Test_12_SPI();
+#endif
+#if RUN_13_I2S
+    Test_13_I2S();
+#endif
+#if RUN_EXMC
+    Test_EXMC();
+#endif
 
-    /* =========================================================
-     * 阶段一：按键轮询测试 (5 秒)
-     * ========================================================= */
-    printf("\r\n[STAGE 1] POLLING TEST (5 seconds)...\r\n");
-    printf("Press PA0/PC13/PB14 to toggle LEDs.\r\n");
-
-    app_key_init_polling();
-    for (uint32_t i = 0; i < 5000; i++) {
-        app_key_polling_task();
-        delay_1ms(1);
-    }
-
-    /* =========================================================
-     * 阶段二：EXMC 三项存储测试 (SDRAM -> SLEEP -> NAND)
-     * ========================================================= */
-    printf("\r\n[STAGE 2] EXMC STORAGE TEST...\r\n");
-    
-    for (int m = 0; m < STORAGE_MODE_MAX; m++) {
-        drv_storage_run((storage_mode_t)m);
-        delay_1ms(1000);
-    }
-
-    /* =========================================================
-     * 阶段三：大满贯结束，按键功能恢复
-     * ========================================================= */
-    printf("\r\n========================================\r\n");
-    printf("ALL TESTS COMPLETED SUCCESSFULLY!\r\n");
-    printf("You can still press keys to toggle LEDs.\r\n");
-    printf("========================================\r\n");
-
-    /* 把按键切回中断模式，死循环里按啥亮啥 */
-    app_key_init_exti(); 
-    
-    while (1) {
-        delay_1ms(1000);
-    }
+    /* 全部跑完后进空闲循环 */
+    while (1) { delay_1ms(1000); }
 }
