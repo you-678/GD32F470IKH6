@@ -10,8 +10,8 @@
 | Tag | `v0.1.0` |
 | 推送分支 | `main` |
 | 仓库可见性 | public |
-| Release 标题 | `v0.1.0 — 全外设串联自检 Harness（EXMC 深睡唤醒 / I2S·SPI 双模 / GD32F470IKH6）` |
-| Release 资产 | `F470IKH6_demo.hex`（早前构建产物，建议按当前源码重编） |
+| Release 标题 | `v0.1.0 · 外设大满贯：深睡无损唤醒 + 全双模驱动闭环`（线上实际标题） |
+| Release 资产 | `F470IKH6_demo.hex`（本地 Keil 编译后上传，约 111 KB） |
 
 ## 2. 简介的发布说明（短版，用于 Release 摘要 / 社交分享）
 
@@ -75,5 +75,5 @@
 - 默认 Harness 需在 GD32470I-EVAL 实板上跑满；无板载 SDRAM / NAND 或焊接异常时对应存储项打印错误但程序继续，属预期行为。
 - I2C / AT24C02 有完整驱动与 App 自检，但**默认 Harness 未接入**，须手动改 `main.c`。
 - `OSAL/`、`Services/`、`Components/protocols`、`Components/third_party` 为预留空目录；`Firmware/GD32F4xx_usb_library/` 未加入编译（`uvprojx` 引用数为 0），当前仅 COM0 可用。
-- Release 附带的 `F470IKH6_demo.hex` 为早前提交构建产物，与最新 Harness 源码不一定一致，建议本地重编。
+- Release 附带的 `F470IKH6_demo.hex` 由本地 Keil 构建后上传；`.gitignore` 忽略仓库内固件，版本一致性以本地重编为准。
 - 部分源码与 `Doc/readme.txt` 中文注释为 GBK 编码，UTF-8 编辑器直接打开会乱码（不影响编译）。

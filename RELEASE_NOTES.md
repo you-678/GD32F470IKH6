@@ -34,4 +34,4 @@ LED、KEY、USART0（printf / IRQ / DMA 回显）、ADC（内部通道 + 双 ADC
 3. 复位后观察八项自检日志；EXMC 深睡阶段会打印 `>>> PRESS PA0 TO WAKEUP <<<`，按 PA0 继续。
 4. 实板建议：跑深睡唤醒测试时断开调试器、由外部 5V 独立供电（实测经验，非代码硬性要求）。
 
-> 本仓库通过 `.gitignore` 忽略全部构建产物，clone 后须本地编译；Release 附带的 `F470IKH6_demo.hex` 为早前提交的构建产物，建议按当前源码重新编译获取最新固件。
+> 本仓库通过 `.gitignore` 忽略全部构建产物，clone 后须本地编译；Release 附带的 `F470IKH6_demo.hex` 由本地 Keil 构建后上传，建议以当前源码为准自行重编验证。
