@@ -1,14 +1,24 @@
 ## 项目简介
-本工程是基于 GD32F470IKH6 的 Keil MDK-ARM 学习工程，验证 [构建 → 烧录 → BSP → App] 全链路打通。
-分层架构（BSP / App / User / Components），`bsp_pin_def.h` 集中管理引脚。
+本工程是基于 GD32F470IKH6 的 Keil MDK-ARM 学习工程，验证从底层 BSP 到应用层 App 的全链路打通。
+采用严格的分层架构（1_BSP / 3_Components / 5_App / 6_Core），硬件引脚由 `bsp_pin_def.h` 集中管理。
 
-## 当前功能 (v0.1.0)
-- **I2C 软/硬双驱动**（`bsp_i2c`），同一套接口切换 `BSP_I2C_MODE_HW` / `BSP_I2C_MODE_SW`
-- **AT24C02 驱动**（`drv_at24c02`）：单字节读写、按页写、连续读、全片写读一致性测试
-- **EEPROM 例程**（`app_i2c_eeprom`）：上电探测 + 全片测试，串口打印结果，LED 跑马/全亮指示
-- **分层架构**：`1_BSP / 2_OSAL / 3_Components / 4_Services / 5_App / 6_Core`
+## 🚀 核心功能 (v0.1.0 最终版)
+
+### 1. EXMC 外部存储（SDRAM + NAND）
+- **统一总线切换**：`bsp_exmc` 支持在 SDRAM 和 NAND 之间动态切换，复用底层数据线。
+- **深睡眠数据保持**：打通 SDRAM 自刷新，芯片深睡唤醒后数据依然 100% 正确。
+
+### 2. 高阶低功耗与唤醒
+- **原生 WFI 唤醒**：弃用有坑的官方库函数，使用原生寄存器 `__WFI()`，解决一睡必死的假死问题。
+- **无损时钟恢复**：唤醒后自动配置 `FMC_WS` 等待周期，瞬间恢复 200MHz 主频并重配串口，杜绝乱码。
+- **按键中断唤醒**：深度融合 `bsp_key` / `app_key` 框架，支持 EXTI 中断瞬间唤醒。
+
+### 3. I2S 音频播放 & SPI Flash
+- **I2S 双模切换**：支持 `BSP_I2S_MODE_HW`（硬件）与 `BSP_I2S_MODE_SW`（软件模拟），实现 WAV 格式解析与音频播放。
+- **SPI 双模切换**：硬件 SPI 与软件模拟 SPI 动态切换，支持标准与 Quad 模式读写 GD25Qxx。
+- **I2C EEPROM**：验证了 AT24C02 的完整读写。
 
 ## 快速使用
-1. 使用 Keil MDK 打开工程文件。
-2. 编译并烧录至 GD32F470IKH6。
-3. 串口（PA9/PA10，115200）观察打印结果。
+1. 使用 Keil MDK 打开工程文件并编译。
+2. 烧录至 GD32F470IKH6（注：**深睡眠唤醒测试必须拔掉 ST-Link 独立运行**）。
+3. 串口（PA9/PA10，115200）观察自动化流水线测试的打印结果。
