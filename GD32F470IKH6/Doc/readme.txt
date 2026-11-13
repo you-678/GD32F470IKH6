@@ -2,8 +2,7 @@
 GD32F470IKH6 项目文档 (Doc/readme.txt)
 ================================================================
 说明：本文档汇总项目的「分层架构」与「官方示例例程（29 个）」。
-其中架构树与 main 调用函数部分原样保留，其余例程已按外设类别
-条理清晰地编排说明。
+其中架构树与 main 调用函数部分条理清晰地编排，作为历史与参考。
 
 ----------------------------------------------------------------
 一、项目架构（Project Architecture）
@@ -21,61 +20,40 @@ Project_Root/
  │    │    ├── bsp_key.h
  │    │    ├── bsp_usart.h
  │    │    ├── bsp_i2c.h       // (包含硬/软 I2C)
- │    │    ├── bsp_spi.h       // (预留 Flash/屏幕)
+ │    │    ├── bsp_spi.h       // (硬件/软件 SPI，Flash/屏幕)
+ │    │    ├── bsp_i2s.h       // (硬件/软件 I2S)
+ │    │    ├── bsp_exmc.h      // (外部存储 SDRAM/NAND)
  │    │    └── bsp_adc.h / bsp_dac.h
  │    └── src/
  │         └── (对应的 .c 文件)
  │
- ├── 2_OSAL/                   // [系统抽象] 操作系统适配层
- │    ├── inc/
- │    │    └── os_wrapper.h    // 提供 os_delay, os_mutex, os_task_create
- │    └── src/
- │         ├── os_baremetal.c  // 裸机下用软件定时器模拟
- │         └── os_freertos.c   // (后期上 FreeRTOS 时加进来)
- │
+ ├── 2_OSAL/                   // [系统抽象] 操作系统适配层（预留空目录）
  ├── 3_Components/             // [组件层] 核心算法、协议解析、第三方设备驱动
  │    ├── drivers/             //  传感器/外设驱动 (芯片无关)
- │    │    ├── sensor_def.h    // 传感器统一接口结构体 (C语言面向对象)
- │    │    ├── drv_sht30.c/h    // 温湿度
- │    │    ├── drv_mpu6050.c/h  // 六轴
- │    │    └── drv_at24c02.c/h  // EEPROM
- │    ├── protocols/           //  通信协议
- │    │    └── parser_custom.c/h  // 处理粘包、校验（给上位机用）
- │    └── third_party/         // 第三方开源库
- │         ├── cJSON/          // (处理JSON通信)
- │         └── fatfs/          // (文件系统)
+ │    │    ├── drv_at24c02.c/h  // EEPROM
+ │    │    ├── drv_storage.c/h  // 存储统一调度（SDRAM/NAND）
+ │    │    ├── drv_gd25qxx.c/h  // SPI Flash
+ │    │    ├── drv_wav.c/h      // WAV 解析
+ │    │    ├── drv_i2s_player.c/h // I2S 播放器
+ │    │    └── wave_data.c/h    // 嵌入的测试 WAV 数据
+ │    ├── protocols/           //  通信协议（预留空目录）
+ │    └── third_party/         //  第三方开源库（预留空目录）
  │
- ├── 4_Services/               // [服务层] 系统级业务管理中心
- │    ├── inc/
- │    │    ├── svc_sensor.h    // 传感器管理 (统一调度、总线防冲突)
- │    │    ├── svc_comm.h      // 通信管理 (打包/解包、上报下发)
- │    │    ├── svc_param.h     // 参数管理 (读写 EEPROM)
- │    │    └── svc_ota.h       // OTA升级管理
- │    └── src/
- │         └── (对应的 .c 文件)
- │
+ ├── 4_Services/               // [服务层] 系统级业务管理中心（预留空目录）
  ├── 5_App/                    // [应用层] 纯业务逻辑 (完全不碰硬件)
- │    ├── inc/
- │    │    ├── app_main.h      // 总入口
- │    │    ├── app_task_env.h  // 环境监测任务
- │    │    └── app_task_ui.h   // 界面显示任务
- │    └── src/
- │         └── (对应的 .c 文件)
- │
+ │    └── app_led/key/usart/adc/dac/i2c_eeprom (.c/.h)
  ├── 6_Core/                   // [核心层] 启动与中断
- │    ├── main.c               // 极简主函数 (只调 App 层初始化)
+ │    ├── main.c               // 默认例程：GD32F470 Full Test
  │    ├── gd32f4xx_it.c        // 所有中断服务函数入口
  │    └── systick.c            // 系统心跳
- │
  ├── 7_Project/                // Keil 工程文件存放处 (.uvprojx 等)
- │
  └── 8_Doc/                    // 文档 (README, 硬件引脚表, 通信协议手册)
 
 注：以上为「规划中的分层目录」示意（编号 0~8 对应 BSP/App/Components 等
 分层理念）。仓库实际采用扁平布局：根目录下为 Project/ User/ BSP/ App/
-Components/ OSAL/ Services/ Firmware/ Doc/ .vscode/，目录名与树中编号一一
-对应（如 1_BSP→BSP/，3_Components→Components/，6_Core→User/），真实结构
-以根目录 README 第 6 节「目录结构」为准。
+Components/ OSAL/ Services/ Firmware/ Doc/ tools/ .vscode/，目录名与树中编号
+一一对应（如 1_BSP→BSP/，3_Components→Components/，6_Core→User/），真实
+结构以根目录 README 第 6 节「目录结构」为准。
 
 ----------------------------------------------------------------
 二、示例例程总览（Example Routine Catalog，共 29 个）
@@ -91,7 +69,7 @@ Components/ OSAL/ Services/ Firmware/ Doc/ .vscode/，目录名与树中编号�
 
 【2. USART 串口】
   04_USART_Printf              串口 printf 重定向打印                     [待补]
-  05_USART_Echo_Interrupt_mode 串口中断回显                               [待补]
+  05_USART_Echo_Interrupt_mode 串口中断回显                              [待补]
   06_USART_DMA                 串口三阶段测试：Printf→IRQ 回显→DMA 回显   [有代码]
 
 【3. ADC 模数转换】
@@ -104,17 +82,17 @@ Components/ OSAL/ Services/ Firmware/ Doc/ .vscode/，目录名与树中编号�
 
 【5. I2C / SPI 串行总线】
   11_I2C_EEPROM                I2C 读写 EEPROM（AT24C02 等）             [待补]
-  12_SPI_Quad_Flash            SPI 四线 Flash（预留屏幕/Flash）           [待补]
+  12_SPI_Quad_Flash            SPI 四线 Flash（GD25Qxx，硬件/软件 SPI）   [有代码]
 
 【6. 音频 / 显示】
-  13_I2S_Audio_Player          I2S 音频播放                              [待补]
+  13_I2S_Audio_Player          I2S 音频播放（WAV 测试数据）              [有代码]
   24_TLI_IPA                  TLI 液晶显示 + IPA 图像处理加速            [待补]
   25_DCI_OV2640               DCI 摄像头 OV2640 采集                    [待补]
 
 【7. 外部存储器（EXMC / SDIO）】
-  14_EXMC_SDRAM               EXMC 外扩 SDRAM                           [待补]
-  15_EXMC_SDRAM_DeepSleep     EXMC SDRAM + 深度睡眠                     [待补]
-  16_EXMC_NandFlash           EXMC NAND Flash                          [待补]
+  14_EXMC_SDRAM               EXMC 外扩 SDRAM                           [有代码]
+  15_EXMC_SDRAM_DeepSleep     EXMC SDRAM + 深度睡眠                     [有代码]
+  16_EXMC_NandFlash           EXMC NAND Flash                          [有代码]
   17_SDIO_SDCardTest          SDIO SD 卡读写测试                        [待补]
 
 【8. 通信总线】
@@ -131,41 +109,39 @@ Components/ OSAL/ Services/ Firmware/ Doc/ .vscode/，目录名与树中编号�
   23_TIMER_Breath_LED       TIMER 呼吸灯（PWM）                       [待补]
   26_TRNG_Get_Random        TRNG 硬件随机数                           [待补]
 
+注：14/15/16（EXMC）由默认 main.c 的「阶段 2 存储测试」覆盖；12/13 见
+第三章对应自检示例。11_I2C_EEPROM 已有 app_i2c_eeprom 组件，但尚未单独
+放在本文档的 main 示例里（可参照 README 第 4.2 节手动切换）。
+
 ----------------------------------------------------------------
 三、主函数调用示例（Main Function Calling Examples）
 ----------------------------------------------------------------
 以下为已提供完整 main() 的例程，直接对应第二章标记 [有代码] 的条目。
 代码中的 BSP/APP 接口（如 bsp_led_xxx / app_led_xxx / bsp_usart_xxx
-/ bsp_adc_xxx / app_adc_xxx / bsp_dac_xxx）即为第一章架构中 1_BSP、
-5_App 层对外暴露的调用函数。
+/ bsp_adc_xxx / app_adc_xxx / bsp_dac_xxx / bsp_spi_xxx / bsp_i2s_xxx
+/ drv_storage_run / drv_gd25qxx_xxx / drv_i2s_player_xxx）即为第一章架构
+中 1_BSP、3_Components、5_App 层对外暴露的调用函数。
 
-注：本节末尾另附「当前工程默认 main.c」一段——即仓库实际烧录运行的
-两阶段 I2C 自检程序（硬件 I2C → 软件 I2C），与根目录 README 第 4.1 /
-5.2 节描述的默认例程一致；其上 01 / 03 / 06 / 09 / 10 为可切换的示例
-例程，需替换 main.c 主体后重新编译。
+注：本节末尾附「当前工程默认 main.c」——即仓库实际烧录运行的
+GD32F470 Full Test（阶段 1 按键轮询 → 阶段 2 EXMC 存储测试 → EXTI 中断
+模式），与根目录 README 第 4.1 / 5.2 节描述的默认例程一致；其上的
+01 / 03 / 06 / 09 / 10 / 12 / 13 为可切换的示例例程，需替换 main.c 主体后
+重新编译。
 
 ================================================================
 01_GPIO_Running_LED
 ================================================================
 /*!
     \brief      系统主函数 - 专测 LED (BSP层 + APP层)
-    \param[in]  无
-    \param[out] 无
-    \retval     无
 */
 int main(void) {
-    /* 1. 初始化滴答定时器和串口 (为了打印测试进度) */
     systick_config();
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-    
+
     printf("\r\n========================================\r\n");
     printf("LED Ultimate Test Starts\r\n");
     printf("========================================\r\n");
 
-    /* =========================================================
-     * 第一部分：测试 BSP 底层函数
-     * ========================================================= */
-    
     printf("[BSP Test 1] bsp_led_init (Init 3 LEDs)\r\n");
     bsp_led_init(LED1);
     bsp_led_init(LED2);
@@ -183,19 +159,14 @@ int main(void) {
     bsp_led_off(LED3); delay_1ms(500);
 
     printf("[BSP Test 4] bsp_led_toggle (Toggle one by one)\r\n");
-    bsp_led_toggle(LED1); delay_1ms(300); /* On */
-    bsp_led_toggle(LED2); delay_1ms(300); /* On */
-    bsp_led_toggle(LED3); delay_1ms(300); /* On */
-    bsp_led_toggle(LED1); delay_1ms(300); /* Off */
-    bsp_led_toggle(LED2); delay_1ms(300); /* Off */
-    bsp_led_toggle(LED3); delay_1ms(300); /* Off */
+    bsp_led_toggle(LED1); delay_1ms(300);
+    bsp_led_toggle(LED2); delay_1ms(300);
+    bsp_led_toggle(LED3); delay_1ms(300);
+    bsp_led_toggle(LED1); delay_1ms(300);
+    bsp_led_toggle(LED2); delay_1ms(300);
+    bsp_led_toggle(LED3); delay_1ms(300);
     delay_1ms(500);
 
-
-    /* =========================================================
-     * 第二部分：测试 APP 业务层函数
-     * ========================================================= */
-    
     printf("[APP Test 1] app_led_all_on (All On)\r\n");
     app_led_all_on();
     delay_1ms(1000);
@@ -205,9 +176,9 @@ int main(void) {
     delay_1ms(1000);
 
     printf("[APP Test 3] app_led_all_off (All Off)\r\n");
-    app_led_all_on();   /* On first */
+    app_led_all_on();
     delay_1ms(500);
-    app_led_all_off();  /* Then Off */
+    app_led_all_off();
     delay_1ms(1000);
 
     printf("[APP Test 4] app_led_flash (Flash 3 times)\r\n");
@@ -222,7 +193,6 @@ int main(void) {
     printf("All LED functions tested OK! Enter while(1).\r\n");
     printf("========================================\r\n");
 
-    /* 停在这里，防止反复重启测试 */
     while(1) {
     }
 }
@@ -232,48 +202,34 @@ int main(void) {
 ================================================================
 /*!
     \brief      系统主函数 - 按键阶段测试 (先全轮询，后全中断)
-    \param[in]  无
-    \param[out] 无
-    \retval     无
 */
 int main(void) {
-    /* 1. 基础环境初始化 */
     systick_config();
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-    
-    bsp_led_init(LED1); 
-    bsp_led_init(LED2); 
+
+    bsp_led_init(LED1);
+    bsp_led_init(LED2);
     bsp_led_init(LED3);
 
-    /* =========================================================
-     * 阶段一：全轮询模式 (执行 15 秒)
-     * ========================================================= */
     printf("\r\n========================================\r\n");
     printf("STAGE 1: ALL POLLING MODE (15 seconds)\r\n");
     printf("Press PA0, PC13, PB14 to test Polling.\r\n");
     printf("========================================\r\n");
 
-    /* 调用 APP 层初始化轮询 */
     app_key_init_polling();
 
-    /* 运行 15 秒的轮询测试 (每次 1ms，循环 15000 次) */
     for (uint32_t i = 0; i < 15000; i++) {
-        app_key_polling_task(); /* 调用 APP 层轮询任务 */
+        app_key_polling_task();
         delay_1ms(1);
     }
 
-    /* =========================================================
-     * 阶段二：全中断模式 (死循环)
-     * ========================================================= */
     printf("\r\n========================================\r\n");
     printf("STAGE 2: ALL EXTI MODE (Infinite loop)\r\n");
     printf("Press PA0, PC13, PB14 to test EXTI.\r\n");
     printf("========================================\r\n");
 
-    /* 调用 APP 层初始化中断并注册回调 */
     app_key_init_exti();
 
-    /* 进入死循环，硬件中断在后台自动触发，主循环啥也不干 */
     while(1) {
     }
 }
@@ -283,59 +239,42 @@ int main(void) {
 ================================================================
 /*!
     \brief      系统主函数 - 串口终极测试 (先测 Printf，再测 IRQ，最后测 DMA)
-    \param[in]  无
-    \param[out] 无
-    \retval     无
 */
 int main(void) {
     uint8_t rx_buf[256];
     uint16_t rx_len = 0;
 
-    /* 1. 基础环境初始化 */
     systick_config();
     bsp_led_init(LED1);
 
-    /* =========================================================
-     * 阶段一：纯 Printf 测试 (持续 5 秒)
-     * ========================================================= */
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-    
+
     printf("\r\n========================================\r\n");
     printf("STAGE 1: Printf Test Started (5 seconds)\r\n");
     printf("You should see heartbeats below.\r\n");
     printf("========================================\r\n");
 
-    /* 循环 50 次，每次 100ms，总计 5 秒 */
     for (int i = 0; i < 50; i++) {
         printf("[Printf] Heartbeat %d\r\n", i);
         delay_1ms(100);
     }
 
-    /* =========================================================
-     * 阶段二：中断接收 (IRQ) + 普通回显 (持续 10 秒)
-     * ========================================================= */
-    /* 重新初始化串口，开启中断接收 */
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_IRQ, 115200U);
-    
+
     printf("\r\n========================================\r\n");
     printf("STAGE 2: IRQ RX & Printf Echo (10 seconds)\r\n");
     printf("Please send some data to test IRQ.\r\n");
     printf("========================================\r\n");
 
-    /* 循环 1000 次，每次 10ms，总计 10 秒 */
     for (int i = 0; i < 1000; i++) {
-        /* 查询是否收到数据 */
         if (bsp_usart_get_rx_data(BSP_USART_COM0, rx_buf, &rx_len)) {
-            rx_buf[rx_len] = '\0'; /* 添加结束符 */
+            rx_buf[rx_len] = '\0';
             printf("[IRQ RX] Got: %s\r\n", rx_buf);
             bsp_led_toggle(LED1);
         }
         delay_1ms(10);
     }
 
-    /* =========================================================
-     * 阶段三：中断接收 (IRQ) + DMA 发送回显 (无限循环)
-     * ========================================================= */
     printf("\r\n========================================\r\n");
     printf("STAGE 3: IRQ RX & DMA Echo (Infinite loop)\r\n");
     printf("Please send some data to test DMA echo.\r\n");
@@ -345,10 +284,7 @@ int main(void) {
         if (bsp_usart_get_rx_data(BSP_USART_COM0, rx_buf, &rx_len)) {
             rx_buf[rx_len] = '\0';
             printf("[IRQ RX] Got: %s\r\n", rx_buf);
-            
-            /* 调用底层 DMA 发送函数，把收到的数据发回去 */
             bsp_usart_send_dma(BSP_USART_COM0, rx_buf, rx_len);
-            
             bsp_led_toggle(LED1);
         }
         delay_1ms(10);
@@ -360,57 +296,41 @@ int main(void) {
 ================================================================
 /*!
     \brief      系统主函数 - ADC 三种模式轮番测试
-    \param[in]  无
-    \param[out] 无
-    \retval     无
 */
 int main(void) {
     systick_config();
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-    
-    /* =========================================================
-     * 阶段一：测试 内部通道 软件触发模式 (持续 10 秒)
-     * ========================================================= */
+
     bsp_adc_init(BSP_ADC_MODE_INTERNAL);
     printf("\r\n========================================\r\n");
     printf("STAGE 1: INTERNAL ADC (10s)\r\n");
     printf("========================================\r\n");
-    
-    for (int i = 0; i < 1000; i++) { /* 1000 * 10ms = 10s */
+    for (int i = 0; i < 1000; i++) {
         app_adc_task_internal();
         delay_1ms(10);
     }
 
-    /* =========================================================
-     * 阶段二：测试 双ADC 跟随模式 DMA (持续 10 秒)
-     * ========================================================= */
     bsp_adc_init(BSP_ADC_MODE_DUAL_DMA_FOLLOW_UP);
     printf("\r\n========================================\r\n");
     printf("STAGE 2: DUAL ADC FOLLOW UP MODE (10s)\r\n");
     printf("========================================\r\n");
-    
     for (int i = 0; i < 1000; i++) {
         app_adc_task_dual_dma();
         delay_1ms(10);
     }
 
-    /* =========================================================
-     * 阶段三：测试 双ADC 并行模式 DMA (持续 10 秒)
-     * ========================================================= */
     bsp_adc_init(BSP_ADC_MODE_DUAL_DMA_PARALLEL);
     printf("\r\n========================================\r\n");
     printf("STAGE 3: DUAL ADC PARALLEL MODE (10s)\r\n");
     printf("========================================\r\n");
-    
     for (int i = 0; i < 1000; i++) {
         app_adc_task_dual_dma();
         delay_1ms(10);
     }
 
     printf("\r\nAll ADC Modes Tested OK!\r\n");
-
     while(1) {
-        delay_1ms(1000); /* 测试结束，停在此处 */
+        delay_1ms(1000);
     }
 }
 
@@ -419,93 +339,40 @@ int main(void) {
 ================================================================
 /*!
     \brief      系统主函数 - DAC 阶梯波扫描测试
-    \param[in]  无
-    \param[out] 无
-    \retval     无
 */
 int main(void) {
-    /* 1. 初始化基础环境 */
     systick_config();
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-    
+
     printf("\r\n========================================\r\n");
     printf("DAC PA4 Scan Test Started!\r\n");
     printf("Outputting 0V -> 3.3V -> 0V continuously.\r\n");
     printf("Measure PA4 with a multimeter to see the change.\r\n");
     printf("========================================\r\n");
 
-    /* 2. 初始化 DAC 硬件 */
     bsp_dac_init();
 
-    /* 3. 主循环 */
     while(1) {
-        /* 调用业务层任务，不断改变电压 */
         app_dac_scan_task();
-        
-        /* 延时 10ms 作为系统心跳 */
         delay_1ms(10);
     }
 }
 
-
 ================================================================
-当前工程默认 main.c（两阶段 I2C 自检：硬件 I2C → 软件 I2C）
+12_SPI_Quad_Flash（GD25Qxx 硬件/软件 SPI 双模自检）
 ================================================================
 /*!
-    \brief      系统主函数 - 当前仓库默认行为（EEPROM 两阶段自检）
-    \param[in]  无
-    \param[out] 无
-    \retval     无
-    说明：上电后先以硬件 I2C0（BSP_I2C_MODE_HW）初始化并探测 AT24C02，
-          做整片「写 0x00~0xFF → 读回比对」一致性测试，延时 1s 后再以
-          软件 I2C（BSP_I2C_MODE_SW，GPIO 模拟 PB6/PB7）跑同样测试，
-          最后打印 "Both HW & SW Tested. Entering Loop" 进入死循环。
-          循环里 LED 表现由最后一次（SW）测试结果决定：
-          通过 → 三灯循环单闪（LED1→LED2→LED3 各 500ms）；
-          失败 → 三灯常亮。
-          硬件 I2C 与软件 I2C 复用同一总线/器件，通常两者同过或同败。
-          本段即为仓库实际烧录运行的 main.c，与根目录 README 第 4.1 / 5.2
-          节描述的默认例程一致。
+    \brief      系统主函数 - SPI Flash 双模自检（硬件 SPI + 软件 SPI）
+    说明：SPI5 接 GD25Qxx 系列 Flash；依次以硬件/软件 SPI 探测、擦扇区、
+           Quad 写读 512 字节并比对。需 wave_data 无关，仅需 Flash。
 */
-int main(void)
-{
-    systick_config();
-    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+#include "gd32f4xx.h"
+#include "gd32f4xx_it.h"
+#include "main.h"
+#include "bsp_spi.h"
+#include "drv_gd25qxx.h"
+#include <string.h>
 
-    printf("\r\n\r\n");
-    printf("========================================\r\n");
-    printf("  Stage 1: Test Hardware I2C (HW)       \r\n");
-    printf("========================================\r\n");
-    
-    /* 1. 测试硬件 I2C */
-    app_i2c_eeprom_init(BSP_I2C_MODE_HW);
-    delay_1ms(1000); /* 稍作延时，避免打印太快 */
-
-
-    printf("\r\n\r\n");
-    printf("========================================\r\n");
-    printf("  Stage 2: Test Software I2C (SW)       \r\n");
-    printf("========================================\r\n");
-    
-    /* 2. 测试软件 I2C */
-    app_i2c_eeprom_init(BSP_I2C_MODE_SW);
-    delay_1ms(1000);
-
-
-    printf("\r\n\r\n");
-    printf("========================================\r\n");
-    printf("  Both HW & SW Tested. Entering Loop    \r\n");
-    printf("========================================\r\n");
-
-    /* 3. 进入主循环 (跑马灯或全亮，取决于最后一次测试结果) */
-    while (1) {
-        app_i2c_eeprom_task();
-    }
-}
-
-
-
-/* ================= Flash 绑定 ================= */
 static gd25qxx_dev_t s_flash;
 
 static uint8_t xfer(uint8_t t) { return bsp_spi_transfer(BSP_SPI_BUS_FLASH, t); }
@@ -515,7 +382,6 @@ static void    qr(void)        { bsp_spi_quad_enter_read(BSP_SPI_BUS_FLASH); }
 static void    qw(void)        { bsp_spi_quad_enter_write(BSP_SPI_BUS_FLASH); }
 static void    qx(void)        { bsp_spi_quad_exit(BSP_SPI_BUS_FLASH); }
 
-/* ================= 单次测试 ================= */
 #define TEST_ADDR   0x000000u
 #define TEST_SIZE   512u
 
@@ -537,8 +403,7 @@ static int flash_test(bsp_spi_mode_t mode)
                  use_quad ? qx : NULL);
 
     if (gd25qxx_probe(&s_flash) != GD25QXX_OK) {
-        printf("[%s] probe FAILED, id=0x%06lX\r\n",
-               name, (unsigned long)s_flash.id);
+        printf("[%s] probe FAILED, id=0x%06lX\r\n", name, (unsigned long)s_flash.id);
         return -1;
     }
     printf("[%s] id=0x%06lX, cap=%luKB, quad=%s\r\n",
@@ -571,13 +436,6 @@ static int flash_test(bsp_spi_mode_t mode)
 
     if (memcmp(tx, rx, TEST_SIZE) != 0) {
         printf("[%s] verify FAILED\r\n", name);
-        for (uint32_t i = 0; i < TEST_SIZE; i++) {
-            if (tx[i] != rx[i]) {
-                printf("  mismatch @ %lu: tx=0x%02X rx=0x%02X\r\n",
-                       (unsigned long)i, tx[i], rx[i]);
-                break;
-            }
-        }
         return -2;
     }
 
@@ -585,13 +443,12 @@ static int flash_test(bsp_spi_mode_t mode)
     return 0;
 }
 
-/* ================= 入口 ================= */
 int main(void)
 {
     systick_config();
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
 
-    printf("\r\n===== GD25Qxx dual-mode self test (direct QCTL) =====\r\n");
+    printf("\r\n===== GD25Qxx dual-mode self test =====\r\n");
 
     int r_hw = flash_test(BSP_SPI_MODE_HW);
     delay_1ms(10);
@@ -606,9 +463,19 @@ int main(void)
     }
 }
 
-
-
+================================================================
+13_I2S_Audio_Player（WAV 测试数据播放，硬件/软件 I2S）
+================================================================
+/*!
+    \brief      系统主函数 - I2S 播放器自检
+    说明：以硬件/软件 I2S 播放 wave_data.c 内嵌的 wavetestdata 测试音。
+*/
+#include "gd32f4xx.h"
+#include "gd32f4xx_it.h"
+#include "main.h"
+#include "bsp_i2s.h"
 #include "drv_i2s_player.h"
+#include "wave_data.h"
 
 static drv_i2s_player_t s_player;
 
@@ -646,7 +513,7 @@ static void test_sw(void)
 int main(void)
 {
     systick_config();
-	bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
 
     nvic_priority_group_set(NVIC_PRIGROUP_PRE0_SUB4);
     nvic_irq_enable(BSP_I2S_AUDIO_IRQn, 0, 1);
@@ -663,4 +530,66 @@ int main(void)
     printf("\r\n===== ALL DONE =====\r\n");
 
     while (1) { delay_1ms(1000); }
+}
+
+================================================================
+当前工程默认 main.c（GD32F470 Full Test：按键轮询 → EXMC 存储 → EXTI）
+================================================================
+/*!
+    \brief      系统主函数 - 当前仓库默认行为（GD32F470 综合自检）
+    说明：上电后先跑阶段 1 按键轮询测试（约 5 秒，按 PA0/PC13/PB14 翻转
+           对应 LED）；再跑阶段 2 EXMC 存储测试（drv_storage_run 依次测
+           SDRAM → SDRAM 休眠 → NAND，每项约 1 秒）；最后打印
+           "ALL TESTS COMPLETED SUCCESSFULLY!" 并切到按键 EXTI 中断模式
+           进入空闲死循环（此后按任意键翻转对应 LED）。
+           本段即为仓库实际烧录运行的 main.c，与根目录 README 第 4.1 / 5.2
+           节描述的默认例程一致。
+*/
+int main(void) {
+    systick_config();
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
+
+    bsp_led_init(LED1);
+    bsp_led_init(LED2);
+    bsp_led_init(LED3);
+
+    printf("\r\n========================================\r\n");
+    printf("GD32F470 Full Test Boot\r\n");
+    printf("========================================\r\n");
+
+    /* =========================================================
+     * 阶段一：按键轮询测试（5 秒）
+     * ========================================================= */
+    printf("\r\n[STAGE 1] POLLING TEST (5 seconds)...\r\n");
+    printf("Press PA0/PC13/PB14 to toggle LEDs.\r\n");
+
+    app_key_init_polling();
+    for (uint32_t i = 0; i < 5000; i++) {
+        app_key_polling_task();
+        delay_1ms(1);
+    }
+
+    /* =========================================================
+     * 阶段二：EXMC 存储测试（SDRAM -> SLEEP -> NAND）
+     * ========================================================= */
+    printf("\r\n[STAGE 2] EXMC STORAGE TEST...\r\n");
+
+    for (int m = 0; m < STORAGE_MODE_MAX; m++) {
+        drv_storage_run((storage_mode_t)m);
+        delay_1ms(1000);
+    }
+
+    /* =========================================================
+     * 全部测试完成，切到中断模式
+     * ========================================================= */
+    printf("\r\n========================================\r\n");
+    printf("ALL TESTS COMPLETED SUCCESSFULLY!\r\n");
+    printf("You can still press keys to toggle LEDs.\r\n");
+    printf("========================================\r\n");
+
+    app_key_init_exti();
+
+    while (1) {
+        delay_1ms(1000);
+    }
 }
