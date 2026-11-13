@@ -535,20 +535,11 @@ int main(void)
 ================================================================
 当前工程默认 main.c（GD32F470 Full Test：按键轮询 → EXMC 存储 → EXTI）
 ================================================================
-/*!
-    \brief      系统主函数 - 当前仓库默认行为（GD32F470 综合自检）
-    说明：上电后先跑阶段 1 按键轮询测试（约 5 秒，按 PA0/PC13/PB14 翻转
-           对应 LED）；再跑阶段 2 EXMC 存储测试（drv_storage_run 依次测
-           SDRAM → SDRAM 休眠 → NAND，每项约 1 秒）；最后打印
-           "ALL TESTS COMPLETED SUCCESSFULLY!" 并切到按键 EXTI 中断模式
-           进入空闲死循环（此后按任意键翻转对应 LED）。
-           本段即为仓库实际烧录运行的 main.c，与根目录 README 第 4.1 / 5.2
-           节描述的默认例程一致。
-*/
+
 int main(void) {
     systick_config();
     bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-
+    
     bsp_led_init(LED1);
     bsp_led_init(LED2);
     bsp_led_init(LED3);
@@ -558,7 +549,7 @@ int main(void) {
     printf("========================================\r\n");
 
     /* =========================================================
-     * 阶段一：按键轮询测试（5 秒）
+     * 阶段一：按键轮询测试 (5 秒)
      * ========================================================= */
     printf("\r\n[STAGE 1] POLLING TEST (5 seconds)...\r\n");
     printf("Press PA0/PC13/PB14 to toggle LEDs.\r\n");
@@ -570,25 +561,26 @@ int main(void) {
     }
 
     /* =========================================================
-     * 阶段二：EXMC 存储测试（SDRAM -> SLEEP -> NAND）
+     * 阶段二：EXMC 三项存储测试 (SDRAM -> SLEEP -> NAND)
      * ========================================================= */
     printf("\r\n[STAGE 2] EXMC STORAGE TEST...\r\n");
-
+    
     for (int m = 0; m < STORAGE_MODE_MAX; m++) {
         drv_storage_run((storage_mode_t)m);
         delay_1ms(1000);
     }
 
     /* =========================================================
-     * 全部测试完成，切到中断模式
+     * 阶段三：大满贯结束，按键功能恢复
      * ========================================================= */
     printf("\r\n========================================\r\n");
     printf("ALL TESTS COMPLETED SUCCESSFULLY!\r\n");
     printf("You can still press keys to toggle LEDs.\r\n");
     printf("========================================\r\n");
 
-    app_key_init_exti();
-
+    /* 把按键切回中断模式，死循环里按啥亮啥 */
+    app_key_init_exti(); 
+    
     while (1) {
         delay_1ms(1000);
     }
