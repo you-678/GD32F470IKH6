@@ -18,7 +18,7 @@
                 "Firmware/CMSIS/GD/GD32F4xx/Include",
                 "User",
                 "BSP",
-                "Middlewares",
+                "Components/drivers",
                 "App"
             ],
             "defines": [

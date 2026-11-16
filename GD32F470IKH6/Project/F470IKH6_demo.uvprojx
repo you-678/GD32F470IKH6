@@ -624,6 +624,41 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_exmc.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_sdio.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_sdio.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_can.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_clockout.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_clockout.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_ctc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_ctc.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_pmu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_pmu.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_rtc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_rtc.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_timer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_timer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -662,6 +697,11 @@
               <FileType>1</FileType>
               <FilePath>..\Components\drivers\drv_storage.c</FilePath>
             </File>
+            <File>
+              <FileName>drv_sdcard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\drivers\drv_sdcard.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -699,6 +739,41 @@
               <FileName>app_i2c_eeprom.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\App\app_i2c_eeprom.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_sdcard.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_sdcard.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_can.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_can.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_clockout.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_clockout.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_ctc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_ctc.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_sleep.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_sleep.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_rtc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_rtc.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_breath.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_breath.c</FilePath>
             </File>
           </Files>
         </Group>

@@ -84,6 +84,7 @@ OF SUCH DAMAGE.
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "systick.h"
 
@@ -96,7 +97,13 @@ OF SUCH DAMAGE.
 #include "bsp_spi.h"
 #include "bsp_i2s.h"
 #include "bsp_exmc.h"
-
+#include "bsp_sdio.h"
+#include "bsp_can.h"
+#include "bsp_clockout.h"
+#include "bsp_ctc.h"
+#include "bsp_pmu.h"
+#include "bsp_rtc.h"
+#include "bsp_timer.h"
 
 #include "drv_at24c02.h"
 #include "drv_gd25qxx.h"
@@ -104,6 +111,7 @@ OF SUCH DAMAGE.
 #include "drv_wav.h"
 #include "wave_data.h"
 #include "drv_storage.h"
+#include "drv_sdcard.h"
 
 #include "app_led.h"
 #include "app_key.h"
@@ -111,6 +119,13 @@ OF SUCH DAMAGE.
 #include "app_adc.h"
 #include "app_dac.h"
 #include "app_i2c_eeprom.h"
+#include "app_sdcard.h"
+#include "app_can.h"
+#include "app_clockout.h"
+#include "app_ctc.h"
+#include "app_sleep.h"
+#include "app_rtc.h"
+#include "app_breath.h"
 
 #include "bsp_pin_def.h"
 

@@ -148,4 +148,59 @@
 #define BSP_NAND_PAGE_TOTAL       (BSP_NAND_PAGE_SIZE + BSP_NAND_SPARE_SIZE)
 #define BSP_NAND_BLOCK_COUNT      (BSP_NAND_ZONE_COUNT * BSP_NAND_ZONE_SIZE)
 #define BSP_NAND_MAX_ADDR         (BSP_NAND_BLOCK_COUNT * BSP_NAND_BLOCK_SIZE * BSP_NAND_PAGE_SIZE)
+
+/* ================= SDIO 引脚 ================= */
+#define SDIO_CLK_PORT          GPIOC
+#define SDIO_CLK_PIN           GPIO_PIN_12
+
+#define SDIO_CMD_PORT          GPIOD
+#define SDIO_CMD_PIN           GPIO_PIN_2
+
+#define SDIO_D0_PORT           GPIOC
+#define SDIO_D0_PIN            GPIO_PIN_8
+#define SDIO_D1_PORT           GPIOC
+#define SDIO_D1_PIN            GPIO_PIN_9
+#define SDIO_D2_PORT           GPIOC
+#define SDIO_D2_PIN            GPIO_PIN_10
+#define SDIO_D3_PORT           GPIOC
+#define SDIO_D3_PIN            GPIO_PIN_11
+
+#define SDIO_GPIO_CLK          RCU_GPIOC
+#define SDIO_GPIO_CLK_CMD      RCU_GPIOD
+#define SDIO_GPIO_AF           GPIO_AF_12
+#define SDIO_GPIO_SPEED        GPIO_OSPEED_50MHZ
+#define SDIO_GPIO_PUPD         GPIO_PUPD_PULLUP
+
+/* ================= SDIO DMA ================= */
+#define SDIO_DMA_PERIPH        DMA1
+#define SDIO_DMA_CHANNEL       DMA_CH3
+#define SDIO_DMA_SUBPERI       DMA_SUBPERI4
+#define SDIO_DMA_FLAG_FTF      DMA_FLAG_FTF
+
+/* =========================================================
+ * 4. CAN0 引脚定义 (依据例程 PB8/PB9)
+ * ========================================================= */
+#define CAN0_CLK                RCU_CAN0
+#define CAN0_GPIO_CLK           RCU_GPIOB
+#define CAN0_GPIO_PORT          GPIOB
+#define CAN0_TX_PIN             GPIO_PIN_9
+#define CAN0_RX_PIN             GPIO_PIN_8
+#define CAN0_AF                 GPIO_AF_9
+#define CAN0_PERIPH             CAN0
+#define CAN0_RX_IRQn            CAN0_RX0_IRQn
+
+/* ================= 时钟输出 (Clockout) ================= */
+#define CLKOUT0_PORT            GPIOA
+#define CLKOUT0_PIN             GPIO_PIN_8
+#define CLKOUT0_CLK             RCU_GPIOA
+
+#define CLKOUT1_PORT            GPIOC
+#define CLKOUT1_PIN             GPIO_PIN_9
+#define CLKOUT1_CLK             RCU_GPIOC
+
+/* ================= 呼吸灯 PWM 引脚 ================= */
+#define BREATH_PWM_PORT         GPIOB
+#define BREATH_PWM_PIN          GPIO_PIN_10
+#define BREATH_PWM_CLK          RCU_GPIOB
+
 #endif

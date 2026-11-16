@@ -177,3 +177,10 @@ void SPI1_IRQHandler(void)
 {
     bsp_i2s_irq_handler(BSP_I2S_BUS_AUDIO);
 }
+
+/* SD 卡 DMA/中断模式必须加 */
+void SDIO_IRQHandler(void)
+{
+    sd_interrupts_process();
+}
+
