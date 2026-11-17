@@ -173,6 +173,20 @@ void EXTI10_15_IRQHandler(void)
     bsp_key_irq_handler(EXTI_14);
 }
 
+
+/* 摄像头 DCI 的 DMA 中断 */
+void DMA1_Channel7_IRQHandler(void)
+{
+    if(dma_interrupt_flag_get(DMA1, DMA_CH7, DMA_INTF_FTFIF)) {
+        /* 清除传输完成标志 */
+        dma_interrupt_flag_clear(DMA1, DMA_CH7, DMA_INTC_FTFIFC);
+        
+        /* 
+         * 注意：不需要调用 dma_channel_enable()，因为配置了 CIRCULAR 模式，
+         * 硬件会自动重载。也不要在这里做软件内存拷贝，否则必丢帧花屏。
+         */
+    }       
+}
 void SPI1_IRQHandler(void)
 {
     bsp_i2s_irq_handler(BSP_I2S_BUS_AUDIO);
@@ -183,4 +197,15 @@ void SDIO_IRQHandler(void)
 {
     sd_interrupts_process();
 }
-
+///* ================= 摄像头 DMA 中断 ================= */
+//void DMA1_Channel7_IRQHandler(void)
+//{
+//    if(dma_interrupt_flag_get(DMA1, DMA_CH7, DMA_INTF_FTFIF)) {
+//        /* 调用 App 层处理函数（执行图像裁剪 320x240 到 240x272） */
+//        app_camera_dma_convert_handler();
+//        
+//        /* 清除标志位并重新开启 DMA */
+//        dma_interrupt_flag_clear(DMA1, DMA_CH7, DMA_INTC_FTFIFC);
+//        dma_channel_enable(DMA1, DMA_CH7);
+//    }       
+//}

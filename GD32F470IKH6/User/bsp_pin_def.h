@@ -203,4 +203,117 @@
 #define BREATH_PWM_PIN          GPIO_PIN_10
 #define BREATH_PWM_CLK          RCU_GPIOB
 
+/* ================= TLI LCD 屏幕引脚 ================= */
+/* HSYNC, VSYNC, PCLK */
+#define LCD_HSYNC_PORT          GPIOI
+#define LCD_HSYNC_PIN           GPIO_PIN_10
+#define LCD_VSYNC_PORT          GPIOI
+#define LCD_VSYNC_PIN           GPIO_PIN_9
+#define LCD_PCLK_PORT           GPIOG
+#define LCD_PCLK_PIN            GPIO_PIN_7
+
+/* R0 ~ R7 */
+#define LCD_R0_PORT             GPIOH
+#define LCD_R0_PIN              GPIO_PIN_2
+#define LCD_R1_PORT             GPIOH
+#define LCD_R1_PIN              GPIO_PIN_3
+#define LCD_R2_PORT             GPIOH
+#define LCD_R2_PIN              GPIO_PIN_8
+#define LCD_R3_PORT             GPIOH
+#define LCD_R3_PIN              GPIO_PIN_9
+#define LCD_R4_PORT             GPIOH
+#define LCD_R4_PIN              GPIO_PIN_10
+#define LCD_R5_PORT             GPIOH
+#define LCD_R5_PIN              GPIO_PIN_11
+#define LCD_R6_PORT             GPIOH
+#define LCD_R6_PIN              GPIO_PIN_12
+#define LCD_R7_PORT             GPIOG
+#define LCD_R7_PIN              GPIO_PIN_6
+
+/* G0 ~ G7 */
+#define LCD_G0_PORT             GPIOE
+#define LCD_G0_PIN              GPIO_PIN_5
+#define LCD_G1_PORT             GPIOE
+#define LCD_G1_PIN              GPIO_PIN_6
+#define LCD_G2_PORT             GPIOH
+#define LCD_G2_PIN              GPIO_PIN_13
+#define LCD_G3_PORT             GPIOH
+#define LCD_G3_PIN              GPIO_PIN_14
+#define LCD_G4_PORT             GPIOH
+#define LCD_G4_PIN              GPIO_PIN_15
+#define LCD_G5_PORT             GPIOI
+#define LCD_G5_PIN              GPIO_PIN_0
+#define LCD_G6_PORT             GPIOI
+#define LCD_G6_PIN              GPIO_PIN_1
+#define LCD_G7_PORT             GPIOI
+#define LCD_G7_PIN              GPIO_PIN_2
+
+/* B0 ~ B7 */
+#define LCD_B0_PORT             GPIOE
+#define LCD_B0_PIN              GPIO_PIN_4
+#define LCD_B1_PORT             GPIOG
+#define LCD_B1_PIN              GPIO_PIN_12
+#define LCD_B2_PORT             GPIOG
+#define LCD_B2_PIN              GPIO_PIN_10
+#define LCD_B3_PORT             GPIOG
+#define LCD_B3_PIN              GPIO_PIN_11
+#define LCD_B4_PORT             GPIOI
+#define LCD_B4_PIN              GPIO_PIN_4
+#define LCD_B5_PORT             GPIOI
+#define LCD_B5_PIN              GPIO_PIN_5
+#define LCD_B6_PORT             GPIOI
+#define LCD_B6_PIN              GPIO_PIN_6
+#define LCD_B7_PORT             GPIOI
+#define LCD_B7_PIN              GPIO_PIN_7
+
+/* LCD 背光引脚 */
+#define LCD_BL_PORT             GPIOB
+#define LCD_BL_PIN              GPIO_PIN_15
+
+/* TLI 复用功能 */
+#define LCD_TLI_AF              GPIO_AF_14
+
+/* ================= 摄像头 SCCB (I2C0) ================= */
+#define SCCB_PERIPH             I2C0
+#define SCCB_CLK                RCU_I2C0
+#define SCCB_SDA_PORT           GPIOB
+#define SCCB_SDA_PIN            GPIO_PIN_7
+#define SCCB_SCL_PORT           GPIOB
+#define SCCB_SCL_PIN            GPIO_PIN_6
+#define SCCB_AF                 GPIO_AF_4
+#define OV2640_DEVICE_WRITE_ADDR 0x60
+#define OV2640_DEVICE_READ_ADDR  0x61
+
+/* ================= 摄像头 DCI 接口 ================= */
+#define DCI_PIXCLK_PORT         GPIOA
+#define DCI_PIXCLK_PIN          GPIO_PIN_6
+#define DCI_VSYNC_PORT          GPIOG
+#define DCI_VSYNC_PIN           GPIO_PIN_9
+#define DCI_HSYNC_PORT          GPIOA
+#define DCI_HSYNC_PIN           GPIO_PIN_4
+#define DCI_D0_PORT             GPIOC
+#define DCI_D0_PIN              GPIO_PIN_6
+#define DCI_D1_PORT             GPIOC
+#define DCI_D1_PIN              GPIO_PIN_7
+#define DCI_D2_PORT             GPIOC
+#define DCI_D2_PIN              GPIO_PIN_8
+#define DCI_D3_PORT             GPIOC
+#define DCI_D3_PIN              GPIO_PIN_9
+#define DCI_D4_PORT             GPIOC
+#define DCI_D4_PIN              GPIO_PIN_11
+#define DCI_D5_PORT             GPIOD
+#define DCI_D5_PIN              GPIO_PIN_3
+#define DCI_D6_PORT             GPIOB
+#define DCI_D6_PIN              GPIO_PIN_8
+#define DCI_D7_PORT             GPIOB
+#define DCI_D7_PIN              GPIO_PIN_9
+#define DCI_AF                  GPIO_AF_13
+#define DCI_DR_ADDRESS          ((uint32_t)0x50050028U)
+
+/* 内存地址映射 */
+#define DCI_FRAME_BUF_ADDR      0xC0000000 /* DMA 实时采集缓冲 */
+#define DCI_SAVE_BUF_ADDR       0xC0800000 /* 拍照保存缓冲 */
+#define TLI_DISPLAY_BUF_ADDR    0xC1000000 /* TLI 屏幕显示缓冲 */
+
+
 #endif

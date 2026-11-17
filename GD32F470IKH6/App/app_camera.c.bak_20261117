@@ -1,0 +1,112 @@
+#include "app_camera.h"
+#include "picture.h"
+
+/* ================= 回调业务逻辑 ================= */
+static void on_camera_wakeup(key_typedef_enum keynum) {
+    (void)keynum;
+    EXTI_PD |= EXTI_14;
+    EXTI_RTEN |= EXTI_14;
+    tli_layer_disable(LAYER0);
+    tli_layer_disable(LAYER1);
+    tli_reload_config(TLI_REQUEST_RELOAD_EN);
+    delay_1ms(100);
+    dci_ov2640_init();
+    dma_interrupt_enable(DMA1, DMA_CH7, DMA_CHXCTL_FTFIE);
+    dma_channel_enable(DMA1, DMA_CH7);
+    delay_1ms(10);
+    dci_enable();
+    dci_capture_enable();
+    delay_1ms(100);
+    bsp_tli_init();
+    bsp_tli_blend_layer1_init(DCI_FRAME_BUF_ADDR, 320, 240);
+    tli_layer_enable(LAYER0);
+    tli_layer_enable(LAYER1);
+    tli_reload_config(TLI_REQUEST_RELOAD_EN);
+    tli_enable();
+}
+
+static void on_camera_tamper(key_typedef_enum keynum) {
+    (void)keynum;
+    delay_1ms(100);
+    bsp_tli_blend_layer1_init(DCI_SAVE_BUF_ADDR, 320, 240);
+    tli_reload_config(TLI_REQUEST_RELOAD_EN);
+    EXTI_RTEN &= ~EXTI_14; 
+}
+
+static void on_camera_user(key_typedef_enum keynum) {
+    (void)keynum;
+    dma_interrupt_disable(DMA1, DMA_CH7, DMA_CHXCTL_FTFIE);
+    dma_channel_disable(DMA1, DMA_CH7);
+    dci_capture_disable();
+    memcpy((void *)DCI_SAVE_BUF_ADDR, (void *)DCI_FRAME_BUF_ADDR, 153600);
+    bsp_tli_blend_layer1_init((uint32_t)image_background1, 320, 240);
+    tli_reload_config(TLI_REQUEST_RELOAD_EN);
+}
+
+/* ================= 初始化与底层对接 ================= */
+
+/* 填满屏幕测试颜色的辅助函数 */
+static void fill_screen_color(uint16_t color) {
+    uint16_t *p = (uint16_t *)DCI_FRAME_BUF_ADDR;
+    for (uint32_t i = 0; i < (320 * 240); i++) {
+        p[i] = color;
+    }
+}
+
+void app_camera_init(void) {
+    /* 1. SDRAM 与 时钟恢复 */
+    bsp_exmc_init_mode(BSP_EXMC_MODE_SDRAM);
+    delay_1ms(1000);
+    bsp_exmc_restore_clock();
+
+    /* 2. 注册按键回调 */
+    bsp_key_init(KEY_WAKEUP, KEY_MODE_EXTI);
+    bsp_key_register_callback(KEY_WAKEUP, on_camera_wakeup);
+    bsp_key_init(KEY_TAMPER, KEY_MODE_EXTI);
+    bsp_key_register_callback(KEY_TAMPER, on_camera_tamper);
+    bsp_key_init(KEY_USER, KEY_MODE_EXTI);
+    bsp_key_register_callback(KEY_USER, on_camera_user);
+
+    /* ================= 阶段 A：验证 TLI 屏幕 ================= */
+    /* 先把 DMA 的显存区填满纯红色 */
+    fill_screen_color(0xF800); // RGB565 纯红
+    
+    /* 初始化 TLI */
+    bsp_tli_init();
+    bsp_tli_blend_layer1_init(DCI_FRAME_BUF_ADDR, 320, 240);
+    tli_layer_enable(LAYER0);
+    tli_layer_enable(LAYER1);
+    tli_reload_config(TLI_REQUEST_RELOAD_EN);
+    tli_enable();
+
+    /* 如果走到这里，屏幕中间应该是【纯红色方块】 */
+    delay_1ms(1000); 
+
+    /* ================= 阶段 B：验证 SCCB 通信 ================= */
+    ov2640_id_struct id;
+    if (dci_ov2640_id_read(&id) != 0) {
+        /* SCCB 读失败！把屏幕填满纯绿色，并死循环停机 */
+        fill_screen_color(0x07E0); // RGB565 纯绿
+        while(1); 
+    } else {
+        /* SCCB 成功！把屏幕填满纯蓝色，继续往下走 */
+        fill_screen_color(0x001F); // RGB565 纯蓝
+        delay_1ms(1000);
+    }
+
+    /* ================= 阶段 C：开启摄像头采集 ================= */
+    dci_ov2640_init();
+    dma_interrupt_enable(DMA1, DMA_CH7, DMA_CHXCTL_FTFIE);
+    dma_channel_enable(DMA1, DMA_CH7);
+    dci_enable();
+    dci_capture_enable();
+
+    /* 等待1秒，如果此时屏幕从纯蓝色变成画面（或者雪花），说明 DCI 通了 */
+    delay_1ms(1000); 
+    
+    /* 此时不再填色，DMA 正在不断覆盖 DCI_FRAME_BUF_ADDR，屏幕会显示摄像头内容 */
+    
+    while(1) {
+        /* 主循环什么都不做，让硬件自动刷屏 */
+    }
+}

@@ -4,26 +4,16 @@
 #include "drv_i2s_player.h"
 
 int main(void)
-{
-    /* 系统底层初始化 */
+{    
+    systick_config();
     nvic_priority_group_set(NVIC_PRIGROUP_PRE1_SUB3);
-    systick_config(); /* 呼吸灯依赖 systick 的延时 */
-    
-    /* 可以保留串口方便调试 */
-    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_PRINTF, 115200U);
-    bsp_led_init(LED1);
-    bsp_led_init(LED2);
-    bsp_led_init(LED3);
+    nvic_irq_enable(DMA1_Channel7_IRQn, 0U, 0U);
 
-    /* App 初始化 */
-    app_breath_init();
+    app_camera_init();
 
-    /* 主循环 */
     while(1) {
-        app_breath_task();
     }
 }
-
 
 //int main(void)
 //{

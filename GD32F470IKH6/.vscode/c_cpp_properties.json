@@ -19,6 +19,8 @@
                 "User",
                 "BSP",
                 "Components/drivers",
+                "Components/images",
+                "Components/drivers/OV2640",
                 "App"
             ],
             "defines": [

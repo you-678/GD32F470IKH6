@@ -104,6 +104,10 @@ OF SUCH DAMAGE.
 #include "bsp_pmu.h"
 #include "bsp_rtc.h"
 #include "bsp_timer.h"
+#include "bsp_tli.h"
+#include "bsp_ipa.h"
+#include "bsp_sccb.h"
+#include "bsp_dci.h"
 
 #include "drv_at24c02.h"
 #include "drv_gd25qxx.h"
@@ -112,6 +116,8 @@ OF SUCH DAMAGE.
 #include "wave_data.h"
 #include "drv_storage.h"
 #include "drv_sdcard.h"
+
+#include "dci_ov2640.h"
 
 #include "app_led.h"
 #include "app_key.h"
@@ -126,6 +132,8 @@ OF SUCH DAMAGE.
 #include "app_sleep.h"
 #include "app_rtc.h"
 #include "app_breath.h"
+#include "app_lcd.h"
+#include "app_camera.h"
 
 #include "bsp_pin_def.h"
 

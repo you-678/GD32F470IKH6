@@ -340,7 +340,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>..\Firmware\GD32F4xx_standard_peripheral\Include;..\Firmware\CMSIS;..\Firmware\CMSIS\GD\GD32F4xx\Include;..\User;..\BSP;..\Components\drivers;..\App</IncludePath>
+              <IncludePath>..\Firmware\GD32F4xx_standard_peripheral\Include;..\Firmware\CMSIS;..\Firmware\CMSIS\GD\GD32F4xx\Include;..\User;..\BSP;..\Components\drivers;..\Components\images;..\Components\drivers\OV2640;..\App</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -659,6 +659,26 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_timer.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_tli.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_tli.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_ipa.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_ipa.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_sccb.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_sccb.c</FilePath>
+            </File>
+            <File>
+              <FileName>bsp_dci.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_dci.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -701,6 +721,11 @@
               <FileName>drv_sdcard.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Components\drivers\drv_sdcard.c</FilePath>
+            </File>
+            <File>
+              <FileName>dci_ov2640.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\drivers\OV2640\dci_ov2640.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -774,6 +799,91 @@
               <FileName>app_breath.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\App\app_breath.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_lcd.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_lcd.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_camera.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_camera.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>images</GroupName>
+          <Files>
+            <File>
+              <FileName>image1.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image1.h</FilePath>
+            </File>
+            <File>
+              <FileName>image2.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image2.h</FilePath>
+            </File>
+            <File>
+              <FileName>image3.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image3.h</FilePath>
+            </File>
+            <File>
+              <FileName>image4.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image4.h</FilePath>
+            </File>
+            <File>
+              <FileName>image5.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image5.h</FilePath>
+            </File>
+            <File>
+              <FileName>image6.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image6.h</FilePath>
+            </File>
+            <File>
+              <FileName>image7.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image7.h</FilePath>
+            </File>
+            <File>
+              <FileName>image8.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image8.h</FilePath>
+            </File>
+            <File>
+              <FileName>image9.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image9.h</FilePath>
+            </File>
+            <File>
+              <FileName>image10.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image10.h</FilePath>
+            </File>
+            <File>
+              <FileName>image11.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image11.h</FilePath>
+            </File>
+            <File>
+              <FileName>image12.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\image12.h</FilePath>
+            </File>
+            <File>
+              <FileName>logo.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\Components\images\logo.h</FilePath>
+            </File>
+            <File>
+              <FileName>picture.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Components\images\picture.c</FilePath>
             </File>
           </Files>
         </Group>

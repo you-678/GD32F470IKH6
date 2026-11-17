@@ -60,6 +60,12 @@ void bsp_key_register_callback(key_typedef_enum keynum, key_isr_callback_t callb
 }
 
 void bsp_key_irq_handler(uint32_t exti_line) {
+	// 如果没有这句判断，所有挂在同一条中断线的按键会同时触发！
+    if (exti_interrupt_flag_get(exti_line) == RESET) {
+        return; 
+    }
+    exti_interrupt_flag_clear(exti_line);
+	
     for (uint8_t i = 0; i < KEYn; i++) {
         if (exti_line == EXTI_LINE[i] && exti_interrupt_flag_get(EXTI_LINE[i]) != RESET) {
             exti_interrupt_flag_clear(EXTI_LINE[i]);

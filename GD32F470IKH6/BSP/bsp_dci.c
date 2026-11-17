@@ -1,0 +1,61 @@
+#include "bsp_dci.h"
+
+/* 提供给摄像头的时钟输出 */
+static void ckout0_init(void) {
+    rcu_periph_clock_enable(RCU_GPIOA);
+    gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_PULLUP, GPIO_PIN_8);
+    gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, GPIO_PIN_8);
+    /* XCLK: HXTAL=25MHz, DIV1 -> 25MHz 给 OV2640
+       原来 DIV4 只有 6.25MHz，帧率掉到每秒几帧 -> 画面一卡一卡 */
+    rcu_ckout0_config(RCU_CKOUT0SRC_HXTAL, RCU_CKOUT0_DIV1);
+}
+
+void bsp_dci_init(void) {
+    dci_parameter_struct dci_struct;
+    dma_single_data_parameter_struct dma_single_struct;
+    
+    rcu_periph_clock_enable(RCU_GPIOA); rcu_periph_clock_enable(RCU_GPIOB);
+    rcu_periph_clock_enable(RCU_GPIOC); rcu_periph_clock_enable(RCU_GPIOD);
+    rcu_periph_clock_enable(RCU_GPIOG); rcu_periph_clock_enable(RCU_DCI);
+    
+    gpio_af_set(GPIOA, DCI_AF, DCI_HSYNC_PIN | DCI_PIXCLK_PIN);
+    gpio_af_set(GPIOC, DCI_AF, DCI_D0_PIN|DCI_D1_PIN|DCI_D2_PIN|DCI_D3_PIN|DCI_D4_PIN);
+    gpio_af_set(GPIOB, DCI_AF, DCI_D6_PIN|DCI_D7_PIN);
+    gpio_af_set(GPIOD, DCI_AF, DCI_D5_PIN);
+    gpio_af_set(GPIOG, DCI_AF, DCI_VSYNC_PIN);
+    
+    gpio_mode_set(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, DCI_HSYNC_PIN | DCI_PIXCLK_PIN);
+    gpio_output_options_set(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, DCI_HSYNC_PIN | DCI_PIXCLK_PIN);
+    gpio_mode_set(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, DCI_D0_PIN|DCI_D1_PIN|DCI_D2_PIN|DCI_D3_PIN|DCI_D4_PIN);
+    gpio_output_options_set(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, DCI_D0_PIN|DCI_D1_PIN|DCI_D2_PIN|DCI_D3_PIN|DCI_D4_PIN);
+    gpio_mode_set(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, DCI_D6_PIN|DCI_D7_PIN);
+    gpio_output_options_set(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, DCI_D6_PIN|DCI_D7_PIN);
+    gpio_mode_set(GPIOD, GPIO_MODE_AF, GPIO_PUPD_NONE, DCI_D5_PIN);
+    gpio_output_options_set(GPIOD, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, DCI_D5_PIN);
+    gpio_mode_set(GPIOG, GPIO_MODE_AF, GPIO_PUPD_NONE, DCI_VSYNC_PIN);
+    gpio_output_options_set(GPIOG, GPIO_OTYPE_PP, GPIO_OSPEED_MAX, DCI_VSYNC_PIN);
+
+    dci_struct.capture_mode = DCI_CAPTURE_MODE_CONTINUOUS;
+    dci_struct.clock_polarity = DCI_CK_POLARITY_RISING;
+    dci_struct.hsync_polarity = DCI_HSYNC_POLARITY_LOW;
+    dci_struct.vsync_polarity = DCI_VSYNC_POLARITY_LOW;
+    dci_struct.frame_rate = DCI_FRAME_RATE_ALL;
+    dci_struct.interface_format = DCI_INTERFACE_FORMAT_8BITS;
+    dci_init(&dci_struct);
+
+    rcu_periph_clock_enable(RCU_DMA1);
+    dma_deinit(DMA1, DMA_CH7);
+    dma_single_struct.periph_addr = DCI_DR_ADDRESS;
+    dma_single_struct.memory0_addr = DCI_FRAME_BUF_ADDR; 
+    dma_single_struct.direction = DMA_PERIPH_TO_MEMORY;
+    dma_single_struct.number = 38400;  /* 320*240*2/4 = 38400 words */
+    dma_single_struct.periph_inc = DMA_PERIPH_INCREASE_DISABLE;
+    dma_single_struct.memory_inc = DMA_MEMORY_INCREASE_ENABLE;
+    dma_single_struct.periph_memory_width = DMA_PERIPH_WIDTH_32BIT;
+    dma_single_struct.priority = DMA_PRIORITY_HIGH;
+    dma_single_struct.circular_mode = DMA_CIRCULAR_MODE_ENABLE;
+    dma_single_data_mode_init(DMA1, DMA_CH7, &dma_single_struct);
+    dma_channel_subperipheral_select(DMA1, DMA_CH7, DMA_SUBPERI1);
+
+    ckout0_init(); // 提供摄像头时钟
+}

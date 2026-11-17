@@ -2,7 +2,7 @@
 
 void app_breath_init(void)
 {
-    /* 初始化 PWM 硬件 */
+    /* 初始化 PB10 PWM 硬件 */
     bsp_timer_pwm_init();
 }
 
@@ -10,11 +10,8 @@ void app_breath_task(void)
 {
     static uint16_t i = 0;
     static uint8_t  breathe_flag = 1;
-    static uint32_t last_tick = 0;
-
-    /* 利用 systick 记录时间，实现非阻塞的 5ms 延时 */
-    /* 注意：如果你的 systick.c 里没有全局毫秒计数，可以直接用 delay_1ms(5)，
-       但阻塞 5ms 对呼吸灯影响不大 */
+    
+    /* 官方原本的 5ms 延时 */
     delay_1ms(5); 
 
     if (breathe_flag) {

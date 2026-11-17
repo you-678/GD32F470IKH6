@@ -1,0 +1,140 @@
+#include "app_camera.h"
+#include "picture.h"
+#include <string.h>
+
+/* ================= 摄像头工作状态 ================= */
+typedef enum {
+    CAM_LIVE = 0,   /* 实时采集显示 */
+    CAM_PHOTO       /* 拍照定格 / 回放照片 */
+} cam_state_t;
+
+static cam_state_t s_cam_state = CAM_LIVE;
+
+/* ================= 底层辅助 ================= */
+
+/* 把 layer1 切到指定显存地址（实时缓冲 / 照片缓冲） */
+static void show_layer1(uint32_t addr) {
+    bsp_tli_blend_layer1_init(addr, 320, 240);
+    tli_layer_enable(LAYER1);
+    tli_reload_config(TLI_REQUEST_RELOAD_EN);
+}
+
+/* 用纯色填满实时显存（RGB565） */
+static void fill_screen_color(uint16_t color) {
+    uint16_t *p = (uint16_t *)DCI_FRAME_BUF_ADDR;
+    for (uint32_t i = 0; i < (320 * 240); i++) {
+        p[i] = color;
+    }
+}
+
+/* 按键读取：默认内部上拉，按下=低电平。20ms 消抖 + 等松开 */
+static uint8_t key_pressed(key_typedef_enum key) {
+    if (bsp_key_state_get(key) == 0) {
+        delay_1ms(20);
+        if (bsp_key_state_get(key) == 0) {
+            uint32_t guard = 200000;
+            while (bsp_key_state_get(key) == 0 && guard--) {
+                delay_1ms(1);
+            }
+            return 1;
+        }
+    }
+    return 0;
+}
+
+/* 停止实时采集（拍照前调用） */
+static void capture_stop(void) {
+    dma_interrupt_disable(DMA1, DMA_CH7, DMA_CHXCTL_FTFIE);
+    dma_channel_disable(DMA1, DMA_CH7);
+    dci_capture_disable();
+}
+
+/* 启动实时采集（返回实时时调用） */
+static void capture_start(void) {
+    dci_ov2640_init();
+    dma_interrupt_enable(DMA1, DMA_CH7, DMA_CHXCTL_FTFIE);
+    dma_channel_enable(DMA1, DMA_CH7);
+    dci_enable();
+    dci_capture_enable();
+}
+
+/* ================= 三个按键动作（对齐官方 demo） ================= */
+
+/* USER 键：拍照 —— 把当前帧存入照片缓冲并定格显示 */
+static void action_take_photo(void) {
+    capture_stop();
+    memcpy((void *)DCI_SAVE_BUF_ADDR, (void *)DCI_FRAME_BUF_ADDR, 320 * 240 * 2);
+    show_layer1(DCI_SAVE_BUF_ADDR);
+    s_cam_state = CAM_PHOTO;
+}
+
+/* TAMPER 键：显示照片 —— 把 layer1 切到照片缓冲 */
+static void action_show_photo(void) {
+    show_layer1(DCI_SAVE_BUF_ADDR);
+    s_cam_state = CAM_PHOTO;
+}
+
+/* WAKEUP 键：返回实时采集 */
+static void action_back_to_live(void) {
+    capture_start();
+    show_layer1(DCI_FRAME_BUF_ADDR);
+    s_cam_state = CAM_LIVE;
+}
+
+/* ================= 初始化 ================= */
+void app_camera_init(void) {
+
+    /* 1. SDRAM 与时钟恢复 */
+    bsp_exmc_init_mode(BSP_EXMC_MODE_SDRAM);
+    delay_1ms(1000);
+    bsp_exmc_restore_clock();
+
+    /* 2. 初始化 SCCB(I2C0) 与 DCI(XCLK) —— 必须在 TLI 之前（验证过的顺序） */
+    bsp_sccb_init();
+    bsp_dci_init();
+    delay_1ms(1000);     /* 等 XCLK 起振、OV2640 上电稳定（与画面流畅那版一致） */
+
+    /* 3. 按键配置为输入（轮询读电平，不依赖中断回调） */
+    bsp_key_init(KEY_WAKEUP, KEY_MODE_GPIO);
+    bsp_key_init(KEY_TAMPER, KEY_MODE_GPIO);
+    bsp_key_init(KEY_USER,   KEY_MODE_GPIO);
+
+    /* 4. 填纯红→初始化 TLI→点亮（验证过的顺序，保证屏幕先亮） */
+    fill_screen_color(0xF800);
+    bsp_tli_init();
+    show_layer1(DCI_FRAME_BUF_ADDR);
+    tli_layer_enable(LAYER0);
+    tli_layer_enable(LAYER1);
+    tli_reload_config(TLI_REQUEST_RELOAD_EN);
+    tli_enable();
+
+    /* TLI 点亮后必须等 1 秒再操作摄像头（与画面流畅那版一致）。
+       少了这个延时，dci_ov2640_init 的 I2C 写会卡在 I2CBSY 死循环 → 停在红色 */
+    delay_1ms(1000);
+
+    /* 5. 初始化摄像头寄存器 + 启动 DCI/DMA 采集（读 ID 诊断已去掉，避免 I2C busy 卡死） */
+    dci_ov2640_init();
+    dma_interrupt_enable(DMA1, DMA_CH7, DMA_CHXCTL_FTFIE);
+    dma_channel_enable(DMA1, DMA_CH7);
+    dci_enable();
+    dci_capture_enable();
+    delay_1ms(300);
+
+    /* 7. 切回实时缓冲，正常画面覆盖诊断色 */
+    show_layer1(DCI_FRAME_BUF_ADDR);
+    s_cam_state = CAM_LIVE;
+
+    /* 8. 主循环：轮询三个按键 */
+    while (1) {
+        if (key_pressed(KEY_USER)) {
+            action_take_photo();
+        }
+        if (key_pressed(KEY_TAMPER)) {
+            action_show_photo();
+        }
+        if (key_pressed(KEY_WAKEUP)) {
+            action_back_to_live();
+        }
+        delay_1ms(5);
+    }
+}
