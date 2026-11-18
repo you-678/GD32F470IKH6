@@ -815,6 +815,21 @@
               <FileType>1</FileType>
               <FilePath>..\App\app_camera.c</FilePath>
             </File>
+            <File>
+              <FileName>app_scheduler.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_scheduler.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_nb_led.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_nb_led.c</FilePath>
+            </File>
+            <File>
+              <FileName>app_nb_key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\App\app_nb_key.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

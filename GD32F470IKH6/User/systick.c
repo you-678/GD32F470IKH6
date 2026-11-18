@@ -37,6 +37,9 @@ OF SUCH DAMAGE.
 
 volatile static uint32_t delay;
 
+/* 全局毫秒时基：每 1ms 在 delay_decrement() 里自增一次，所有非阻塞 process 共用这一个钟 */
+volatile uint32_t uwTick;
+
 /*!
     \brief      configure systick
     \param[in]  none
@@ -77,7 +80,19 @@ void delay_1ms(uint32_t count)
 */
 void delay_decrement(void)
 {
+    uwTick++;                       /* 新增：墙上的钟，每 1ms 跳一下 */
     if(0U != delay) {
-        delay--;
+        delay--;                    /* 原有的阻塞延时逻辑保留，老代码继续能用 */
     }
+}
+
+/*!
+    \brief      get current tick in ms
+    \param[in]  none
+    \param[out] none
+    \retval     uwTick value
+*/
+uint32_t get_tick(void)
+{
+    return uwTick;
 }

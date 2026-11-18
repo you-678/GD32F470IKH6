@@ -43,5 +43,9 @@ void systick_config(void);
 void delay_1ms(uint32_t count);
 /* delay decrement */
 void delay_decrement(void);
+/* global millisecond tick, incremented in SysTick_Handler */
+extern volatile uint32_t uwTick;
+/* read current tick */
+uint32_t get_tick(void);
 
 #endif /* SYS_TICK_H */
