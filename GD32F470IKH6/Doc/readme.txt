@@ -23,7 +23,10 @@ Project_Root/
  │    │    ├── bsp_spi.h       // (硬件/软件 SPI，Flash/屏幕)
  │    │    ├── bsp_i2s.h       // (硬件/软件 I2S)
  │    │    ├── bsp_exmc.h      // (外部存储 SDRAM/NAND)
- │    │    └── bsp_adc.h / bsp_dac.h
+ │    │    ├── bsp_adc.h / bsp_dac.h
+│    │    ├── bsp_sdio.h / bsp_can.h / bsp_ctc.h / bsp_rtc.h / bsp_pmu.h /
+│    │    │    bsp_clockout.h / bsp_timer.h / bsp_tli.h / bsp_ipa.h /
+│    │    └── bsp_sccb.h / bsp_dci.h / bsp_trng.h   // v0.1.0 之后新增
  │    └── src/
  │         └── (对应的 .c 文件)
  │
@@ -35,15 +38,17 @@ Project_Root/
  │    │    ├── drv_gd25qxx.c/h  // SPI Flash
  │    │    ├── drv_wav.c/h      // WAV 解析
  │    │    ├── drv_i2s_player.c/h // I2S 播放器
- │    │    └── wave_data.c/h    // 嵌入的测试 WAV 数据
+ │    │    ├── wave_data.c/h    // 嵌入的测试 WAV 数据
+│    │    ├── drv_sdcard.c/h  // SDIO SD 卡
+│    │    └── OV2640/         // dci_ov2640.c/.h + init_table.h
  │    ├── protocols/           //  通信协议（预留空目录）
  │    └── third_party/         //  第三方开源库（预留空目录）
  │
  ├── 4_Services/               // [服务层] 系统级业务管理中心（预留空目录）
  ├── 5_App/                    // [应用层] 纯业务逻辑 (完全不碰硬件)
- │    └── app_led/key/usart/adc/dac/i2c_eeprom (.c/.h)
+│    └── app_led/key/usart/adc/dac/i2c_eeprom + sdcard/can/clockout/ctc/sleep/rtc/breath/lcd/camera
  ├── 6_Core/                   // [核心层] 启动与中断
- │    ├── main.c               // 默认例程：全外设串联自检 Harness（RUN_xx 开关）
+ │    ├── main.c               // 默认例程：TRNG 硬件随机数测试（串口 IRQ，2026-11-18）
  │    ├── gd32f4xx_it.c        // 所有中断服务函数入口
  │    └── systick.c            // 系统心跳
  ├── 7_Project/                // Keil 工程文件存放处 (.uvprojx 等)
@@ -86,32 +91,33 @@ Components/ OSAL/ Services/ Firmware/ Doc/ tools/ .vscode/，目录名与树中�
 
 【6. 音频 / 显示】
   13_I2S_Audio_Player          I2S 音频播放（WAV 测试数据）              [有代码]
-  24_TLI_IPA                  TLI 液晶显示 + IPA 图像处理加速            [待补]
-  25_DCI_OV2640               DCI 摄像头 OV2640 采集                    [待补]
+  24_TLI_IPA                  TLI 液晶显示 + IPA 图像处理加速            [有代码]
+  25_DCI_OV2640               DCI 摄像头 OV2640 采集                    [有代码]
 
 【7. 外部存储器（EXMC / SDIO）】
   14_EXMC_SDRAM               EXMC 外扩 SDRAM                           [有代码]
   15_EXMC_SDRAM_DeepSleep     EXMC SDRAM + 深度睡眠                     [有代码]
   16_EXMC_NandFlash           EXMC NAND Flash                          [有代码]
-  17_SDIO_SDCardTest          SDIO SD 卡读写测试                        [待补]
+  17_SDIO_SDCardTest          SDIO SD 卡读写测试                        [有代码]
 
 【8. 通信总线】
-  18_CAN_Network             CAN 总线网络                              [待补]
+  18_CAN_Network             CAN 总线网络                              [有代码]
   27_ENET                    以太网（ETH）                             [待补]
   28_USB_Device              USB 设备                                 [待补]
   29_USB_Host                USB 主机                                 [待补]
 
 【9. 系统 / 定时器 / 其他外设】
-  19_RCU_Clock_Out           RCU 时钟输出（MCO）                       [待补]
-  20_CTC_Calibration        CTC 时钟校准                              [待补]
-  21_PMU_Sleep_Wakeup       PMU 睡眠与唤醒                            [待补]
-  22_RTC_Calendar           RTC 实时时钟日历                          [待补]
-  23_TIMER_Breath_LED       TIMER 呼吸灯（PWM）                       [待补]
-  26_TRNG_Get_Random        TRNG 硬件随机数                           [待补]
+  19_RCU_Clock_Out           RCU 时钟输出（MCO）                       [有代码]
+  20_CTC_Calibration        CTC 时钟校准                              [有代码]
+  21_PMU_Sleep_Wakeup       PMU 睡眠与唤醒                            [有代码]
+  22_RTC_Calendar           RTC 实时时钟日历                          [有代码]
+  23_TIMER_Breath_LED       TIMER 呼吸灯（PWM）                       [有代码]
+  26_TRNG_Get_Random        TRNG 硬件随机数                           [有代码·当前默认]
 
-注：14/15/16（EXMC）由默认 main.c（全外设串联自检 Harness）依次跑过；12/13 见
-第三章对应自检示例。11_I2C_EEPROM 已有 app_i2c_eeprom 组件，但尚未单独
-放在本文档的 main 示例里（可参照 README 第 4.2 节手动切换）。
+注：14/15/16（EXMC）与 17~26（SDIO / CAN / Clock-out / CTC / PMU / RTC / TIMER /
+TLI / DCI / TRNG）均已提供对应 BSP/App 代码或第三章 main() 示例；其中 26_TRNG 是
+当前 User/main.c 的默认例程（见第四章），其余需按 README 第 4.2 节替换 main()。
+11_I2C_EEPROM 已有 app_i2c_eeprom 组件，但未单独放在本文档的 main 示例里。
 
 ----------------------------------------------------------------
 三、主函数调用示例（Main Function Calling Examples）
@@ -122,11 +128,10 @@ Components/ OSAL/ Services/ Firmware/ Doc/ tools/ .vscode/，目录名与树中�
 / drv_storage_run / drv_gd25qxx_xxx / drv_i2s_player_xxx）即为第一章架构
 中 1_BSP、3_Components、5_App 层对外暴露的调用函数。
 
-注：本节末尾附「当前工程默认 main.c」——即仓库实际烧录运行的
-全外设串联自检 Harness（LED → KEY → USART → ADC → DAC → SPI → I2S → EXMC 八项依次
-八项自检），与根目录 README 第 4.1 / 5.2 节描述的默认例程一致；其上的
-01 / 03 / 06 / 09 / 10 / 12 / 13 为各外设单独的示例例程（与 Harness 内 Test_xx 对应），可经 RUN_xx 开关或替换 main() 主体
-重新编译。
+注：第三章中段（标题「历史参考：v0.1.0 全外设串联自检 Harness」）保留的是
+2026-11-13 归档代码，其中的 RUN_xx / AUTO_RUN_ALL / Test_xx() 已不在当前
+User/main.c 中。当前实际烧录运行的默认 main.c 是 TRNG 硬件随机数测试，
+完整代码与版本演进见本文档第四章；接线、编译与排错见根目录 README.md。
 
 ================================================================
 01_GPIO_Running_LED
@@ -533,7 +538,7 @@ int main(void)
 }
 
 ================================================================
-当前工程默认 main.c（全外设串联自检 Harness：LED → KEY → USART → ADC → DAC → SPI → I2S → EXMC）
+历史参考：v0.1.0 全外设串联自检 Harness（2026-11-13 归档，非当前默认 main）
 ================================================================
 
 /* ---- main.c 顶部：编译期开关，选择要跑的例程 ---- */
@@ -983,7 +988,7 @@ static void Test_13_I2S(void) {
 
 
 /* =================================================================
- * 当前工程默认 EXMC 存储测试
+ * （历史 Harness 片段）EXMC 存储自检 Test_EXMC
  * ================================================================= */
 #if RUN_EXMC
 static void Test_EXMC(void) {
@@ -1218,3 +1223,81 @@ int main(void)
     while(1) {
     }
 }
+
+================================================================
+四、当前工程默认 main.c 与版本演进（2026-11-18 核实）
+================================================================
+
+【当前默认例程】TRNG 硬件随机数测试（commit 9544e11）
+默认 User/main.c 只有 51 行，已无 RUN_xx / AUTO_RUN_ALL 开关。上电用 IRQ 模式
+串口打印 TRNG 测试横幅、初始化片内 TRNG，主循环跑 app_usart_task() 按行处理命令：
+  - 发 "TRNG"（须带 \r 或 \n） -> 打印两个 0~255 的硬件随机数
+  - 发 "BAUD9600"              -> 运行时切到 9600 波特率
+  - 发其它字符串                -> [IRQ RX] Got: <原串> 并 DMA 回显
+注意：代码里会调用 bsp_led_toggle(LED1)，但默认 main 未调用
+      systick_config() / bsp_led_init() / bsp_key_init()，LED GPIO 未初始化，
+所以上电不点灯、按键无响应，这是当前代码的真实行为，不是故障。
+
+/* ---- User/main.c（当前真实内容，中文注释为 GBK 编码，此处转写） ---- */
+#include "gd32f4xx.h"
+#include "gd32f4xx_it.h"
+#include "main.h"
+#include "drv_i2s_player.h"
+
+int main(void)
+{
+    /* 串口：中断接收模式，115200 */
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_IRQ, 115200U);
+    printf("\r\n /==============Gigadevice TRNG test=============/ \r\n");
+
+    /* TRNG 初始化（内部含 3 次重试） */
+    if(ERROR == bsp_trng_init()) {
+        printf("TRNG init error \r\n");
+        while(1);
+    }
+    printf("TRNG init ok \r\n");
+    printf("Send 'TRNG' to generate random number.\r\n");
+
+    while(1) {
+        app_usart_task();
+    }
+}
+
+/* 真实 main.c 里还保留一段被注释掉的 SD 卡测试 main()：
+   app_sdcard_init() -> app_sdcard_config() -> app_sdcard_info_print()
+   -> app_sdcard_test()，并需 nvic_irq_enable(SDIO_IRQn, 1U, 0U)。
+   需要时取消注释、并注释掉上面的 TRNG main() 即可。 */
+
+【v0.1.0 之后新增（均已编译进 uvprojx，默认 main 未调用）】
+  BSP  : bsp_sdio / bsp_can / bsp_clockout / bsp_ctc / bsp_pmu / bsp_rtc /
+         bsp_timer / bsp_tli / bsp_ipa / bsp_sccb / bsp_dci / bsp_trng
+  App  : app_sdcard / app_can / app_clockout / app_ctc / app_sleep / app_rtc /
+         app_breath / app_lcd / app_camera
+  组件 : drv_sdcard、OV2640/dci_ov2640.c(+init_table.h)、
+         images/(picture.c/.h + image1~12.h)
+  标准库: 新增 gd32f4xx_can/ctc/dci/ipa/rtc/sdio/tli/trng 等
+          （工程内 gd32f4xx_*.c 共 31 个参与编译）
+  中断 : 新增 SDIO_IRQHandler、DMA1_Channel7_IRQHandler（摄像头 DMA）
+  引脚 : bsp_pin_def.h 新增 SDIO(PC12/PD2/PC8~PC11, AF12, DMA1_CH3)、
+         CAN0(PB9/PB8, AF9)、SCCB(PB6/PB7, AF4, OV2640 0x60/0x61)、
+         DCI(PIXCLK PA6 / VSYNC PG9 等)、TLI(AF14)
+
+【第三章 main() 示例与第二章编号对照】
+  17 SDIO SD 卡   -> app_sdcard_init/config/info_print/test()
+  18 CAN          -> app_can_init() + app_can_task()（Tamper 键发帧）
+  19 RCU Clock-out-> app_clockout_init() + app_clockout_task()
+  20 CTC          -> app_ctc_init() + app_ctc_task()
+  21 PMU Sleep    -> app_sleep_test()（必须 IRQ 串口，函数内含死循环）
+  22 RTC          -> app_rtc_init() + app_rtc_task()（必须 IRQ 串口）
+  23 TIMER 呼吸灯  -> app_breath_init() + app_breath_task()
+  24 TLI/IPA/LCD  -> app_lcd_init() + app_lcd_task()
+  25 DCI OV2640   -> app_camera_init()（需 nvic_irq_enable(DMA1_Channel7_IRQn)）
+  26 TRNG         -> 即本章「当前默认例程」
+
+【重要】第三章的「全外设串联自检 Harness」代码块是 v0.1.0（2026-11-13）归档，
+其中的 RUN_xx / AUTO_RUN_ALL / Test_xx() 已不在当前 User/main.c 中；如需跑八项
+自检，请把该段完整复制回 main.c 并重新编译。当前默认行为以本章为准，仓库总览、
+接线、编译与排错见根目录 README.md（2026-11-18 版）。
+
+【编码】本文档为 UTF-8；部分源码（main.c / app_*.c / bsp_*.c）的中文注释为 GBK，
+用 GBK / GB18030 打开即可，不影响编译。

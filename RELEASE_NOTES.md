@@ -1,37 +1,56 @@
 ## 项目简介
 
-基于 **GD32470I-EVAL 评估板（GD32F470IKH6，Cortex-M4 @ 200MHz）** 的 Keil MDK-ARM 裸机单工程。把官方分散 Demo 抽成 `BSP / App / User` 分层并引入 `Components/drivers` 组件层，引脚与时钟由 `User/bsp_pin_def.h` 集中管理，验证「构建 → 烧录 → BSP → App」全链路打通。
+基于 **GD32470I-EVAL 评估板（GD32F470IKH6，Cortex-M4 @ 200MHz）** 的 Keil MDK-ARM 裸机单工程。把官方分散 Demo 抽成 `BSP / App / User` 分层并引入 `Components/drivers` 组件层，引脚 / 时钟 / AF / DMA 由 `User/bsp_pin_def.h` 集中管理，验证「构建 → 烧录 → BSP → App」全链路打通；换板只改 `bsp_pin_def.h` 一个文件。
 
-v0.1.0 的默认程序是 **全外设串联自检 Harness**：上电后依次跑 ① LED → ② KEY（轮询 + EXTI）→ ③ USART（printf 心跳 + IRQ 回显 + DMA 回显）→ ④ ADC（内部温度 / Vref / Vbat + 双 ADC DMA 跟随 / 并行）→ ⑤ DAC 阶梯波 → ⑥ SPI Flash（硬 / 软双模 Quad 比对）→ ⑦ I2S（硬 / 软双模播放 WAV）→ ⑧ EXMC（SDRAM / 深睡唤醒 / NAND），最后打印 `ALL TESTS COMPLETED SUCCESSFULLY!`。用 `RUN_xx` 编译开关与 `AUTO_RUN_ALL` 可精简或单测。
+**默认程序是 TRNG 硬件随机数测试**：上电以 IRQ 模式初始化 COM0（115200），初始化片内 TRNG，主循环跑 `app_usart_task()`（按 `\r`/`\n` 行断帧）。串口发 `TRNG` 打印两个 0~255 的硬件随机数，发 `BAUD9600` 运行时切 9600，其它字符串 `[IRQ RX] Got:` 原样回显并 DMA 发回。
 
-## 🚀 核心功能 (v0.1.0)
+## 🚀 核心功能
 
-### 1. EXMC 外部存储（SDRAM + NAND）
+### 1. 默认 `main()` 实际会跑的
 
-- **统一总线切换**：`bsp_exmc` 支持在 SDRAM 与 NAND 之间切换、复用底层数据线；`drv_storage_run()` 统一调度 `SDRAM` / `SDRAM-SLEEP` / `NAND` 三种模式。
-- **深睡眠数据保持**：进入深睡前令 SDRAM 自刷新，PA0 按键唤醒后重配时钟并重新初始化 SDRAM，校验掉电前数据，实测通过（日志 `Woke up! Clock restored.` → `Re-init SDRAM...` → `[SDRAM-SLEEP] PASS`）。
+- **USART0 IRQ 模式**：`bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_IRQ, 115200U)`，RBNE 中断收 256B 缓冲，`fputc` 重定向 `printf`。
+- **TRNG 真随机数**：`bsp_trng_init()`（等 `DRDY`，失败重试 3 次）、`bsp_trng_random_get()` 取 32 位随机数、`bsp_trng_random_range_get(min,max)` 取区间值。
+- **按行断帧命令行**：`app_usart_task()` 只在收到 `\r`/`\n` 时处理整行，早期「长串分包」现象已消除。
+- **启动打印**：`Gigadevice TRNG test` 横幅、`TRNG init ok`、`Send 'TRNG' to generate random number.`
 
-### 2. 高阶低功耗与唤醒
+### 2. 已编译进固件、需手动切 `main()` 的模块
 
-- **原生 WFI 唤醒**：使用原生 `__WFI()` + `SCB_SCR_SLEEPDEEP_Msk` 进入深睡，避开官方库封装导致的假死问题。
-- **无损时钟恢复**：唤醒后 `bsp_exmc_restore_clock()` 恢复 200MHz 主频、重配 FMC 等待周期与串口，杜绝串口乱码。
-- **按键中断唤醒**：复用 `bsp_key` / `app_key` 的 EXTI 框架，PA0 下降沿唤醒。
+下表全部已加入 `F470IKH6_demo.uvprojx` 编译，但默认 `main()` 不调用；需按 `README.md` §4.2 替换 `main()` 主体才会运行。
 
-### 3. I2S 音频 & SPI Flash 双模
+| 类别 | 模块 |
+| --- | --- |
+| 基础外设 | LED / KEY（轮询 + EXTI）、ADC（内部温度 / Vref / Vbat + 双 ADC DMA）、DAC（PA4 阶梯波） |
+| 串行总线 | I2C + AT24C02（硬 / 软双模）、SPI + GD25Qxx（硬 / 软 + Quad，SW 无 io2/io3 自动降级单线） |
+| 音频 / 存储 | I2S + WAV Player（硬 / 软双模，8000Hz / mono / 16bit）、EXMC SDRAM 32MB + NAND 16MB（深睡自刷新 + PA0 唤醒时钟恢复） |
+| 通信 / 时钟 | SDIO SD 卡、CAN0、RCU Clock-out、CTC 校准、RTC 日历、PMU 睡眠、TIMER PWM 呼吸灯 |
+| 显示 / 图像 | TLI + IPA + LCD（12 张 `image*.h` 图层混合）、DCI + OV2640（SCCB 配置 + DMA1_CH7 采集显示） |
+| 工程基础 | SysTick 1kHz、集中引脚宏、31 个 `gd32f4xx_*.c` 标准库、`SDIO_IRQHandler` / `DMA1_Channel7_IRQHandler` |
 
-- **I2S 硬 / 软双模**：`BSP_I2S_MODE_HW` 与 `BSP_I2S_MODE_SW`，配合 `drv_wav` 解析 + `drv_i2s_player` 播放嵌入的 `wavetestdata`（8000Hz / 单声道 / 16bit / 8000 帧）。
-- **SPI 硬 / 软双模 + Quad**：硬件 SPI 与 GPIO 模拟 SPI 动态切换，探测 GD25Qxx ID / 容量并做 512 字节擦写读比对；软件模式无 io2/io3 引脚时自动降级单线（`quad=no`）。
-- **I2C / AT24C02**：提供硬件 I2C 与软件模拟 I2C 两套实现、AT24C02 驱动与 `app_i2c_eeprom` 自检；**默认 Harness 未接入**，需按 README §4.2 手动启用。
+### 3. 工程化基础
 
-### 4. 其余已跑通模块
-
-LED、KEY、USART0（printf / IRQ / DMA 回显）、ADC（内部通道 + 双 ADC DMA）、DAC（PA4 阶梯波）。逐项真实实现与关键文件见 README 第 2 节。
+- 工具链：Keil µVision V5.40 / MDK-ARM 5.40 / **ARMCLANG V6.19（AC6，C99，-O2）** / `GigaDevice.GD32F4xx_DFP 3.2.0`。
+- 分层：`BSP/` 板级驱动、`App/` 业务逻辑、`Components/drivers/` 芯片无关组件、`User/` 工程配置；所有 `.c` 已在工程文件组内。
+- 许可：自有代码 MIT（`LICENSE`）；`Firmware/` 下 GigaDevice 官方库遵循其文件头 BSD-3-Clause。
 
 ## 快速使用
 
 1. Keil MDK-ARM 5.40 打开 `GD32F470IKH6/Project/F470IKH6_demo.uvprojx`，F7 编译、F8 下载。
 2. JP5 短接 1-2，USB-TTL 接 COM0（PA9 / PA10），串口助手设 **115200 / 8-N-1 / 无流控**。
-3. 复位后观察八项自检日志；EXMC 深睡阶段会打印 `>>> PRESS PA0 TO WAKEUP <<<`，按 PA0 继续。
-4. 实板建议：跑深睡唤醒测试时断开调试器、由外部 5V 独立供电（实测经验，非代码硬性要求）。
+3. 复位后看到 `TRNG init ok`，发送 `TRNG<回车>` 得到两个随机数；发 `BAUD9600<回车>` 后把串口助手同步改成 9600。
+4. 默认 `main` 未初始化 LED / KEY / SysTick，上电不点灯、按键无响应是**真实行为**，不是故障。
 
-> 本仓库通过 `.gitignore` 忽略全部构建产物，clone 后须本地编译；Release 附带的 `F470IKH6_demo.hex` 由本地 Keil 构建后上传，建议以当前源码为准自行重编验证。
+## 固件与文档说明
+
+> ⚠️ 附件 `F470IKH6_demo.hex` 是 **2026-11-13 旧版构建**（114 KB，对应早前的「全外设串联自检 Harness」默认 `main`），**与当前 tag 内的 TRNG 源码不一致**，仅作历史参考。请按当前源码本地重新编译烧录；`.gitignore` 忽略全部构建产物，仓库本身不含固件。
+
+- 当前真实功能、接线、排错、输入输出示例：根目录 `README.md`（2026-11-18 版，§1–§8）。
+- 29 例程框架 + 历史 Harness 完整代码：`Doc/readme.txt` 第二、三章（第三章标题已标注「历史参考」）。
+- 当前默认 TRNG `main.c` 全文与版本演进：`Doc/readme.txt` 第四章。
+- 详细发布核对清单：`relnotes_v010.md`。
+
+## 已知限制
+
+- 29 个例程中 `27_ENET`、`28/29_USB` 仍为标题占位；`Firmware/GD32F4xx_usb_library/` 未加入编译（`uvprojx` 引用数 0），仅 COM0 可用。
+- `OSAL/`、`Services/`、`Components/protocols`、`Components/third_party` 为预留空目录。
+- `BSP/`、`App/` 下有若干 `*.bak_*` 调试备份，不参与编译。
+- 部分源码（`main.c` / `app_*.c` / `bsp_*.c`）中文注释为 GBK；`Doc/readme.txt` 与根目录 `.md` 文档均为 UTF-8。用 GBK / GB18030 打开源码不影响编译。
