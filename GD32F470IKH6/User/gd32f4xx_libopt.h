@@ -108,6 +108,7 @@ OF SUCH DAMAGE.
 #include "bsp_ipa.h"
 #include "bsp_sccb.h"
 #include "bsp_dci.h"
+#include "bsp_trng.h"
 
 #include "drv_at24c02.h"
 #include "drv_gd25qxx.h"

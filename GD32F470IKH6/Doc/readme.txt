@@ -1206,3 +1206,15 @@ int main(void)
         app_lcd_task();
     }
 }
+
+int main(void)
+{    
+    systick_config();
+    nvic_priority_group_set(NVIC_PRIGROUP_PRE1_SUB3);
+    nvic_irq_enable(DMA1_Channel7_IRQn, 0U, 0U);
+
+    app_camera_init();
+
+    while(1) {
+    }
+}

@@ -4,16 +4,25 @@
 #include "drv_i2s_player.h"
 
 int main(void)
-{    
-    systick_config();
-    nvic_priority_group_set(NVIC_PRIGROUP_PRE1_SUB3);
-    nvic_irq_enable(DMA1_Channel7_IRQn, 0U, 0U);
+{
+    /* 串口：中断接收模式，115200 */
+    bsp_usart_init(BSP_USART_COM0, BSP_USART_MODE_IRQ, 115200U);
+    printf("\r\n /==============Gigadevice TRNG test=============/ \r\n");
 
-    app_camera_init();
+    /* TRNG 初始化（内部已带重试） */
+    if(ERROR == bsp_trng_init()) {
+        printf("TRNG init error \r\n");
+        while(1);
+    }
+    printf("TRNG init ok \r\n");
+    printf("Send 'TRNG' to generate random number.\r\n");
 
     while(1) {
+        /* 串口应用任务：命令解析、DMA 回显、LED 翻转都在里面 */
+        app_usart_task();
     }
 }
+
 
 //int main(void)
 //{

@@ -679,6 +679,11 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\bsp_dci.c</FilePath>
             </File>
+            <File>
+              <FileName>bsp_trng.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\bsp_trng.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
