@@ -12,7 +12,7 @@
 | 推送分支 | `main` |
 | 仓库 | `you-678/GD32F470IKH6`，public |
 | Release 标题 | `v0.1.0 · TRNG 真随机数 + 全模块集成（EXMC 深睡 / SPI·I2S 双模 / SDIO / CAN / OV2640）` |
-| Release 资产 | `F470IKH6_demo.hex`（**11-13 旧版构建**，与当前 TRNG 源码不一致，需本地重编） |
+| Release 资产 | `F470IKH6_demo.hex`（**2026-11-18 按当前 TRNG 源码重编**，28,025 字节，SHA256 `0b5b1505…cb5cb5`） |
 | 文档基准 | `README.md` / `Doc/readme.txt` 2026-11-18 版 |
 
 ## 2. 简介的发布说明（短版，用于 Release 摘要 / 社交分享）
@@ -86,7 +86,7 @@ int main(void)
 - 默认 `main` 无 LED / KEY / SysTick 初始化，上电不点灯、按键无响应（真实行为）。
 - 29 例程中 `27_ENET`、`28/29_USB` 为标题占位；USB 库未加入编译；`OSAL/`、`Services/`、`Components/protocols`、`Components/third_party` 为预留空目录。
 - `BSP/`、`App/` 下 `*.bak_*` 调试备份不参与编译。
-- Release 附件 `F470IKH6_demo.hex` 为 **11-13 Harness 版旧构建**，与当前 tag 源码不一致，仅历史参考，请本地重编。
+- Release 附件 `F470IKH6_demo.hex` 已于 2026-11-18 **按当前 TRNG 源码重新编译替换**（28,025 字节，SHA256 `0b5b1505…cb5cb5`），与 tag 源码一致。
 - 编码混用：源码部分 GBK、文档 UTF-8，按对应编码打开。
 
 ---

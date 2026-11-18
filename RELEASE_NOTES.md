@@ -41,7 +41,7 @@
 
 ## 固件与文档说明
 
-> ⚠️ 附件 `F470IKH6_demo.hex` 是 **2026-11-13 旧版构建**（114 KB，对应早前的「全外设串联自检 Harness」默认 `main`），**与当前 tag 内的 TRNG 源码不一致**，仅作历史参考。请按当前源码本地重新编译烧录；`.gitignore` 忽略全部构建产物，仓库本身不含固件。
+> ✅ 附件 `F470IKH6_demo.hex`（28,025 字节，SHA256 `0b5b1505…cb5cb5`）已按**当前 tag 内的 TRNG 源码**重新编译替换（2026-11-18，Keil MDK-ARM 5.40 / ARMCLANG V6.19，构建日志 0 Error / 0 Warning）。固件内可查到 `Gigadevice TRNG test`、`TRNG init ok`，与 tag 源码一致；`.gitignore` 忽略全部构建产物，仓库本身不含固件。
 
 - 当前真实功能、接线、排错、输入输出示例：根目录 `README.md`（2026-11-18 版，§1–§8）。
 - 29 例程框架 + 历史 Harness 完整代码：`Doc/readme.txt` 第二、三章（第三章标题已标注「历史参考」）。
